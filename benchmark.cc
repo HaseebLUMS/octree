@@ -29,6 +29,7 @@ void performBFS(OctreeType& octree, double voxel_size)
     long long int nodes_at_last_level = node_counts_per_level[octree.getTreeDepth()];
 
     for (auto [k, v]: node_counts_per_level) {
+        std::cout << "k: " << k << " v: " << v << std::endl;
         if (v == octree.getLeafCount()) {
             nodes_at_levels_with_leaves_cardinality += v;
         }
@@ -53,7 +54,8 @@ int main() {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
         pcl::PLYReader Reader;
         Reader.read(dataset, *cloud);
-        std::vector<double> voxel_sizes = {2, 1.5, 1, 0.5, 0.1, 0.01};
+        // std::vector<double> voxel_sizes = {2, 1.5, 1, 0.5, 0.1, 0.01, 0.001, 0.0001};
+        std::vector<double> voxel_sizes = {0.00044};
         for (auto ele : voxel_sizes) {
             OctreeType octree(ele);
             octree.setInputCloud(cloud);
