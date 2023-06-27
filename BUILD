@@ -7,3 +7,9 @@ cc_binary(
     srcs = ["benchmark.cc"],
     deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io"]
 )
+
+cc_binary(
+    name = "encode",
+    srcs = ["encode.cc"],
+    deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io"]
+)
