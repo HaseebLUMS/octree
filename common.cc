@@ -60,7 +60,7 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
     return child_center;
 }
 
-void write_to_file(std::string file_name, std::vector<Eigen::Vector4f> centers) {
+void writeToFile(std::string file_name, std::vector<Eigen::Vector4f> centers) {
     std::ofstream outputFile(file_name);
 
     if (outputFile.is_open()) {
@@ -71,7 +71,7 @@ void write_to_file(std::string file_name, std::vector<Eigen::Vector4f> centers) 
         outputFile << "property float y" << "\n";
         outputFile << "property float z" << "\n";
         outputFile << "end_header" << "\n";
-        
+
         for (const auto& center : centers) {
             outputFile << center.x() << " " << center.y() << " " << center.z() << "\n";
         }
@@ -80,5 +80,25 @@ void write_to_file(std::string file_name, std::vector<Eigen::Vector4f> centers) 
     } else {
         std::cerr << "Unable to open the file." << std::endl;
     }
+}
 
+int getRandomNumber(int x, int y) {
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<int> distribution(x, y);
+    return distribution(generator);
+}
+
+int dropOrNot(double drop_probability_percentage) {
+    if (drop_probability_percentage == 0) {
+        return false;
+    }
+
+    if (drop_probability_percentage < 0.01 || drop_probability_percentage > 100) {
+        std::cerr << "Wring drop_probability_percentage " << drop_probability_percentage << std::endl;
+        exit(1);
+    }
+
+    double drop_probability = 100 * drop_probability_percentage;
+    return getRandomNumber(0, 10000) <= drop_probability;
 }

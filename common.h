@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
+#include <random>
 #include <vector>
 
 #include <pcl/octree/octree.h>
@@ -25,6 +26,8 @@ struct compressedOctree {
 
 Eigen::Vector3f getRootCenter(OctreeType& octree);
 Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, uint8_t bit_pos);
-void write_to_file(std::string file_name, std::vector<Eigen::Vector4f> centers);
+void writeToFile(std::string file_name, std::vector<Eigen::Vector4f> centers);
+int getRandomNumber(int x, int y);
+int dropOrNot(double drop_probability_percentage);
 
 #endif
