@@ -1,10 +1,15 @@
 #include "common.h"
 
+inline bool isPointCardinalityLevel(int current_level, int max_level, std::unordered_map<int, long long> node_counts_per_level) {
+    return node_counts_per_level[current_level] == node_counts_per_level[max_level];
+}
+
 compressedOctree compressOctree(OctreeType& octree, double drop_probability) {
     std::vector<std::vector<uint8_t>> compressed_bytes(octree.getTreeDepth() + 1);
 
     auto it = octree.depth_begin();
     auto it_end = octree.depth_end();
+    auto node_counts_per_level = getNodeCountsPerLevel(octree);
     uint64_t num_of_leaves = 0;
     int lost_bytes = 0;
 
@@ -12,7 +17,8 @@ compressedOctree compressOctree(OctreeType& octree, double drop_probability) {
         auto current_level = it.getCurrentOctreeDepth();
         uint8_t occupancy_byte = it.getNodeConfiguration();
         
-        if (current_level == octree.getTreeDepth() && true == dropOrNot(drop_probability)) {
+        if (isPointCardinalityLevel(current_level, octree.getTreeDepth(), node_counts_per_level) 
+            && true == dropOrNot(drop_probability)) {
             lost_bytes++;
             occupancy_byte = 0;
         }
@@ -39,6 +45,6 @@ compressedOctree compressOctree(OctreeType& octree, double drop_probability) {
         .num_of_leaves = num_of_leaves
     };
     
-    std::cout << "Lost Bytes: " << lost_bytes << std::endl;
+    std::cout << "Lost Bytes: " << lost_bytes << " / " << flat_bytes.size() << " (" << (100*((double)lost_bytes/flat_bytes.size())) << ")" << std::endl;
     return result;
 }

@@ -21,18 +21,22 @@ std::vector<Eigen::Vector4f> decompressOctree(compressedOctree compressed_octree
 
     int count_bytes = 0;
     int count_centers = 1;
-    float current_side_length = compressed_octree.root_side_length;
+    auto current_side_length = compressed_octree.root_side_length;
 
     int total_centers = 1;
     while(count_bytes < compressed_bytes.size()) {
         int count_next_centers = 0;
 
         for(int i = 0; i < count_centers ; i++) {
-            uint8_t current_byte = compressed_bytes[count_bytes + i];
-            if (current_byte == 0 && false == isLastLevel(count_bytes + i, compressed_octree.num_of_leaves, compressed_bytes.size())) {
-                std::cout << "Hmm, zero byte found at " << count_bytes + i << ". Total " << compressed_bytes.size() << std::endl;
-                exit(1);
+            auto current_byte = compressed_bytes[count_bytes + i];
+
+            if (current_byte == 0 && false == isLastLevel(
+                count_bytes + i, compressed_octree.num_of_leaves, compressed_bytes.size())) {
+                // Lost Byte
+                next_centers[count_next_centers] = centers[i];
+                count_next_centers++;
             }
+
             for(int k = 0 ; k < 8 ; k++) {
                 if(((current_byte >> k) & 1 )!= 0) {
                     Eigen::Vector4f child_center = getChildCenter(centers[i], current_side_length, k);

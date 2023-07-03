@@ -26,8 +26,9 @@ struct compressedOctree {
 
 Eigen::Vector3f getRootCenter(OctreeType& octree);
 Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, uint8_t bit_pos);
-void writeToFile(std::string file_name, std::vector<Eigen::Vector4f> centers);
+void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers);
 int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
+std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
 
 #endif

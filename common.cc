@@ -60,9 +60,12 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
     return child_center;
 }
 
-void writeToFile(std::string file_name, std::vector<Eigen::Vector4f> centers) {
-    std::ofstream outputFile(file_name);
-
+void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers) {
+    std::string lp_str = std::to_string(lost_probability);
+    lp_str.erase(lp_str.find_last_not_of('0') + 1, std::string::npos);
+    std::string filename = "./output/output_lost_" + lp_str + ".ply";
+    
+    std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
         outputFile << "ply" << "\n";
         outputFile << "format ascii 1.0" << "\n";
@@ -95,10 +98,22 @@ int dropOrNot(double drop_probability_percentage) {
     }
 
     if (drop_probability_percentage < 0.01 || drop_probability_percentage > 100) {
-        std::cerr << "Wring drop_probability_percentage " << drop_probability_percentage << std::endl;
+        std::cerr << "Wrong drop_probability_percentage " << drop_probability_percentage << std::endl;
         exit(1);
     }
 
     double drop_probability = 100 * drop_probability_percentage;
     return getRandomNumber(0, 10000) <= drop_probability;
+}
+
+std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree) {
+    auto it = octree.depth_begin();
+    auto it_end = octree.depth_end();
+
+    std::unordered_map<int, long long int> node_counts_per_level;
+    while (it != it_end) {
+        node_counts_per_level[it.getCurrentOctreeDepth()]++;
+        it++;
+    }
+    return node_counts_per_level;
 }
