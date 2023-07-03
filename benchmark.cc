@@ -45,7 +45,7 @@ void performBFS(OctreeType& octree, double voxel_size)
 
 int main() {
     // std::vector<std::string> files = {"prettygirl.ply", "ricardo.ply", "soldier.ply"};
-    std::vector<std::string> files = {"thaidancer.ply"};
+    std::vector<std::string> files = {"ricardo.ply"};
 
     for (auto dataset_name : files) {
         std::string dataset = "/Users/haseeb/Documents/GitHub/octree/assets/" + dataset_name;

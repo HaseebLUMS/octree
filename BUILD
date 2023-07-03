@@ -9,7 +9,8 @@ cc_binary(
 )
 
 cc_binary(
-    name = "encode",
-    srcs = ["encode.cc"],
-    deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io"]
+    name = "encdec",
+    srcs = ["main.cc", "encode.hpp", "decode.hpp", "common.h", "common.cc"],
+    deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io"],
+    data = ["assets/ricardo.ply"]
 )
