@@ -6,3 +6,79 @@ Eigen::Vector3f getRootCenter(OctreeType& octree) {
     Eigen::Vector3f root_center = Eigen::Vector3f((min_x+max_x)/2, (min_y+max_y)/2, (min_z+max_z)/2);
     return root_center;
 }
+
+Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, uint8_t bit_pos) {
+    float margin = side_len / 4;
+    Eigen::Vector4f child_center = parent_center;
+    switch(bit_pos)
+    {
+        case 0:
+            child_center[0] -= margin;
+            child_center[1] -= margin;
+            child_center[2] -= margin;
+            break;
+        case 1:
+            child_center[0] -= margin;
+            child_center[1] -= margin;
+            child_center[2] += margin;
+            break;
+        case 2:
+            child_center[0] -= margin;
+            child_center[1] += margin;
+            child_center[2] -= margin;
+            break;
+        case 3:
+            child_center[0] -= margin;
+            child_center[1] += margin;
+            child_center[2] += margin;
+            break;
+        case 4:
+            child_center[0] += margin;
+            child_center[1] -= margin;
+            child_center[2] -= margin;
+            break;
+        case 5:
+            child_center[0] += margin;
+            child_center[1] -= margin;
+            child_center[2] += margin;
+            break;
+        case 6:
+            child_center[0] += margin;
+            child_center[1] += margin;
+            child_center[2] -= margin;
+            break;
+        case 7:
+            child_center[0] += margin;
+            child_center[1] += margin;
+            child_center[2] += margin;
+            break;
+        default:
+
+            break;
+
+    }
+    return child_center;
+}
+
+void write_to_file(std::string file_name, std::vector<Eigen::Vector4f> centers) {
+    std::ofstream outputFile(file_name);
+
+    if (outputFile.is_open()) {
+        outputFile << "ply" << "\n";
+        outputFile << "format ascii 1.0" << "\n";
+        outputFile << "element vertex " << centers.size() << "\n";
+        outputFile << "property float x" << "\n";
+        outputFile << "property float y" << "\n";
+        outputFile << "property float z" << "\n";
+        outputFile << "end_header" << "\n";
+        
+        for (const auto& center : centers) {
+            outputFile << center.x() << " " << center.y() << " " << center.z() << "\n";
+        }
+
+        outputFile.close();
+    } else {
+        std::cerr << "Unable to open the file." << std::endl;
+    }
+
+}

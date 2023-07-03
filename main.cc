@@ -1,4 +1,5 @@
 #include "encode.hpp"
+#include "decode.hpp"
 
 int main() {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
@@ -10,6 +11,9 @@ int main() {
         octree.setInputCloud(cloud);
         octree.defineBoundingBox();
         octree.addPointsFromInputCloud();
+
         auto compressed_octree = compressOctree(octree);
+        auto decompressed_octree = decompressOctree(compressed_octree);
+        write_to_file("./output/output.ply", decompressed_octree);
     }
 }
