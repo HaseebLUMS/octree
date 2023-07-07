@@ -1,3 +1,4 @@
 bazel-**
 assets/
 output/**
+.DS_Store/
