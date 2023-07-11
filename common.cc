@@ -60,7 +60,8 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
     return child_center;
 }
 
-void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers) {
+void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors) {
+    
     std::string lp_str = std::to_string(lost_probability);
     lp_str.erase(lp_str.find_last_not_of('0') + 1, std::string::npos);
     std::string filename = "./output/output_lost_" + lp_str + ".ply";
@@ -73,12 +74,16 @@ void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers) 
         outputFile << "property float x" << "\n";
         outputFile << "property float y" << "\n";
         outputFile << "property float z" << "\n";
+        outputFile << "property uchar red" << "\n";
+        outputFile << "property uchar green" << "\n";
+        outputFile << "property uchar blue" << "\n";
         outputFile << "end_header" << "\n";
-
-        for (const auto& center : centers) {
-            outputFile << center.x() << " " << center.y() << " " << center.z() << "\n";
+        for (int i = 0; i < centers.size(); i++) {
+            const auto& center = centers[i];
+            const auto& color = colors[i];
+            outputFile << center.x() << " " << center.y() << " " << center.z() << " " << (int)color.r << " " << (int)color.g << " " << (int)color.b  << "\n";
         }
-
+        
         outputFile.close();
     } else {
         std::cerr << "Unable to open the file." << std::endl;

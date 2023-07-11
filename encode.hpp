@@ -48,3 +48,13 @@ compressedOctree compressOctree(OctreeType& octree, double drop_probability) {
     std::cout << "Lost Bytes: " << lost_bytes << " / " << flat_bytes.size() << " (" << (100*((double)lost_bytes/flat_bytes.size())) << ")" << std::endl;
     return result;
 }
+
+std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud) {
+    std::vector<uint8_t> colors;
+    for (auto p: cloud->points) {
+        colors.push_back(p.r);
+        colors.push_back(p.g);
+        colors.push_back(p.b);
+    }
+    return colors;
+}

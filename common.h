@@ -13,7 +13,7 @@
 #include <pcl/point_types.h>
 #include <pcl/io/ply_io.h>
 
-typedef pcl::PointXYZ PointType;
+typedef pcl::PointXYZRGB PointType;
 typedef pcl::PointCloud<PointType> PointCloudType;
 typedef pcl::octree::OctreePointCloud<PointType> OctreeType;
 
@@ -24,11 +24,20 @@ struct compressedOctree {
     float root_side_length;
 };
 
+struct Color {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    Color(): r(0), g(0), b(0) {}
+    Color(uint8_t r, uint8_t g, uint8_t b): r(r), g(g), b(b) {}
+};
+
 Eigen::Vector3f getRootCenter(OctreeType& octree);
 Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, uint8_t bit_pos);
-void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers);
+void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors);
 int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
-
+std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud);
+std::vector<Color> decompressColors(std::vector<uint8_t> compressed_colors);
 #endif
