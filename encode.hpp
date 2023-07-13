@@ -19,6 +19,7 @@ void get_leaves_indices(pcl::octree::OctreeNode* node, std::vector<int> &indices
 std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree, double drop_probability) {
     std::vector<std::vector<uint8_t>> compressed_bytes(octree.getTreeDepth() + 1);
     std::vector<int> points_order;
+    int num_of_pclevels_bytes = 0;
 
     auto it = octree.depth_begin();
     auto it_end = octree.depth_end();
@@ -31,12 +32,15 @@ std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree
         uint8_t occupancy_byte = it.getNodeConfiguration();
         
         // Simulating drops
-        if (isPointCardinalityLevel(current_level, octree.getTreeDepth(), node_counts_per_level) 
-            && true == dropOrNot(drop_probability)) {
-            lost_bytes++;
-            occupancy_byte = 0;
+        if (isPointCardinalityLevel(current_level, octree.getTreeDepth(), node_counts_per_level)) {
+            num_of_pclevels_bytes++;
+            if (true == dropOrNot(drop_probability)) {
+                lost_bytes++;
+                occupancy_byte = 0;
+            }
         }
 
+        // Getting points order (needed for ordering color bytes)
         if (octree.getTreeDepth() == current_level) {
             std::vector<int> point_indices;
             get_leaves_indices(it.getCurrentOctreeNode(), point_indices);
@@ -69,7 +73,7 @@ std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree
         .num_of_leaves = num_of_leaves
     };
     
-    std::cout << "Lost Bytes: " << lost_bytes << " / " << flat_bytes.size() << " (" << (100*((double)lost_bytes/flat_bytes.size())) << ")" << std::endl;
+    std::cout << "Lost Bytes: " << lost_bytes << " / " << flat_bytes.size() << " (" << (100*((double)lost_bytes/flat_bytes.size())) << "), # of PClevels bytes = " << num_of_pclevels_bytes << std::endl;
     return std::make_tuple(result, points_order);
 }
 
