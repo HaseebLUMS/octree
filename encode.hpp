@@ -4,8 +4,21 @@ inline bool isPointCardinalityLevel(int current_level, int max_level, std::unord
     return node_counts_per_level[current_level] == node_counts_per_level[max_level];
 }
 
-compressedOctree compressOctree(OctreeType& octree, double drop_probability) {
+void get_leaves_indices(pcl::octree::OctreeNode* node, std::vector<int> &indices) {
+    if(node->getNodeType() != pcl::octree::LEAF_NODE) {
+        std::cerr << "The node in get_leaves_indices is not a lead node" << std::endl;
+        exit(1);
+    }
+
+    pcl::octree::OctreeLeafNode<pcl::octree::OctreeContainerPointIndices>* leaf_node = static_cast<pcl::octree::OctreeLeafNode<pcl::octree::OctreeContainerPointIndices>*>(node);
+    pcl::octree::OctreeContainerPointIndices container = leaf_node->getContainer();
+    container.getPointIndices(indices);
+}
+
+
+std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree, double drop_probability) {
     std::vector<std::vector<uint8_t>> compressed_bytes(octree.getTreeDepth() + 1);
+    std::vector<int> points_order;
 
     auto it = octree.depth_begin();
     auto it_end = octree.depth_end();
@@ -17,10 +30,21 @@ compressedOctree compressOctree(OctreeType& octree, double drop_probability) {
         auto current_level = it.getCurrentOctreeDepth();
         uint8_t occupancy_byte = it.getNodeConfiguration();
         
+        // Simulating drops
         if (isPointCardinalityLevel(current_level, octree.getTreeDepth(), node_counts_per_level) 
             && true == dropOrNot(drop_probability)) {
             lost_bytes++;
             occupancy_byte = 0;
+        }
+
+        if (octree.getTreeDepth() == current_level) {
+            std::vector<int> point_indices;
+            get_leaves_indices(it.getCurrentOctreeNode(), point_indices);
+            if (point_indices.size() != 1) {
+                std::cerr << "[compressOctree] At the last level, there should be 1 point per node. But that's not the case!" << std::endl;
+                exit(1);
+            }
+            points_order.insert(points_order.end(), point_indices.begin(), point_indices.end());
         }
 
         compressed_bytes.at(current_level).push_back(occupancy_byte);
@@ -46,12 +70,13 @@ compressedOctree compressOctree(OctreeType& octree, double drop_probability) {
     };
     
     std::cout << "Lost Bytes: " << lost_bytes << " / " << flat_bytes.size() << " (" << (100*((double)lost_bytes/flat_bytes.size())) << ")" << std::endl;
-    return result;
+    return std::make_tuple(result, points_order);
 }
 
-std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud) {
+std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order) {
     std::vector<uint8_t> colors;
-    for (auto p: cloud->points) {
+    for (auto ind : points_order) {
+        const auto& p = cloud->points.at(ind);
         colors.push_back(p.r);
         colors.push_back(p.g);
         colors.push_back(p.b);

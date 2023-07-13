@@ -14,13 +14,12 @@ int main() {
 
         std::vector<double> lost_probabilities = {0, 0.01, 0.1, 0.5, 1, 10, 50, 100};
         for (auto lp : lost_probabilities) {
-            auto compressed_octree = compressOctree(octree, lp);
-            auto compressed_colors = compressColors(cloud);
+            auto [compressed_octree, points_order] = compressOctree(octree, lp);
+            auto compressed_colors = compressColors(cloud, points_order);
 
             auto decompressed_octree = decompressOctree(compressed_octree);
             auto decompressed_colors = decompressColors(compressed_colors);
             writeToFile(lp, decompressed_octree, decompressed_colors);
-            break;
         }
     }
 }

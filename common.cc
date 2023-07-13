@@ -81,6 +81,7 @@ void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, 
         for (int i = 0; i < centers.size(); i++) {
             const auto& center = centers[i];
             const auto& color = colors[i];
+            // auto color = cloud->points[i];
             outputFile << center.x() << " " << center.y() << " " << center.z() << " " << (int)color.r << " " << (int)color.g << " " << (int)color.b  << "\n";
         }
         

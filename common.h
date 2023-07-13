@@ -5,6 +5,7 @@
 #include <iostream>
 #include <queue>
 #include <random>
+#include <tuple>
 #include <vector>
 
 #include <pcl/octree/octree.h>
@@ -38,6 +39,6 @@ void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, 
 int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
-std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud);
+std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order);
 std::vector<Color> decompressColors(std::vector<uint8_t> compressed_colors);
 #endif
