@@ -5,7 +5,7 @@ int main() {
     pcl::PointCloud<PointType>::Ptr cloud (new pcl::PointCloud<PointType>);
     pcl::PLYReader Reader;
     Reader.read("./assets/ricardo.ply", *cloud);
-    std::vector<double> voxel_sizes = {0.1};
+    std::vector<double> voxel_sizes = {1};
     for (auto vox : voxel_sizes) {
         OctreeType octree(vox);
         octree.setInputCloud(cloud);
@@ -16,7 +16,7 @@ int main() {
         for (auto lp : lost_probabilities) {
             auto [compressed_octree, points_order] = compressOctree(octree, lp);
             auto compressed_colors = compressColors(cloud, points_order);
-            
+
             std::cout << "# of color bytes: " << compressed_colors.size() << std::endl;
             std::cout << "# of geometry bytes: " << compressed_octree.bytes.size() << std::endl;
 

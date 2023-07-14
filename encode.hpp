@@ -78,12 +78,31 @@ std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree
 }
 
 std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order) {
-    std::vector<uint8_t> colors;
+    std::vector<uint8_t> orig_colors;
+    std::vector<uint8_t> compressed_colors;
+
     for (auto ind : points_order) {
         const auto& p = cloud->points.at(ind);
-        colors.push_back(p.r);
-        colors.push_back(p.g);
-        colors.push_back(p.b);
+        orig_colors.push_back(p.r);
+        orig_colors.push_back(p.g);
+        orig_colors.push_back(p.b);
     }
-    return colors;
+
+    JpegEncoder* jpeg_encoder = new JpegEncoder();
+    do_jpeg_compression(orig_colors, compressed_colors, jpeg_encoder);
+    return orig_colors;
+}
+
+void do_jpeg_compression(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder) {
+    int color_size = orig_colors.size();
+    int image_width = 1024;
+    int image_height = 1024;
+
+    if(orig_colors.size()/3 < 1024*512) {
+        image_height = 512;
+    } else if(orig_colors.size() / 3 >= 1024 * 1024) {
+        image_width = 2048;
+    }
+
+    jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
 }

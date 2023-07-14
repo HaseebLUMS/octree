@@ -8,6 +8,8 @@
 #include <tuple>
 #include <vector>
 
+#include "libs/JpegEncoder.hpp"
+
 #include <pcl/octree/octree.h>
 #include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
@@ -39,6 +41,11 @@ void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, 
 int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
+
+// Compression
 std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order);
+void do_jpeg_compression(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder);
+
+// Decompression
 std::vector<Color> decompressColors(std::vector<uint8_t> compressed_colors);
 #endif
