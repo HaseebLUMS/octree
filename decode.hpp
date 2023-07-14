@@ -61,13 +61,17 @@ std::vector<Eigen::Vector4f> decompressOctree(compressedOctree compressed_octree
     return decompressed_centers;
 }
 
-std::vector<Color> decompressColors(std::vector<uint8_t> compressed_colors) {
+std::vector<Color> decompressColors(std::vector<uint8_t> compressed_bytes) {
+    std::vector<uint8_t> decoded_bytes;
+    JpegDecoder* jpeg_decoder = new JpegDecoder();
+    jpeg_decoder->decode(compressed_bytes, decoded_bytes);
+
     std::vector<Color> decompressed_colors;
-    for (int i = 0; i < compressed_colors.size()/3; i++) {
+    for (int i = 0; i < decoded_bytes.size()/3; i++) {
         Color c;
-        c.r = compressed_colors[3*i+0];
-        c.g = compressed_colors[3*i+1];
-        c.b = compressed_colors[3*i+2];
+        c.r = decoded_bytes[3*i+0];
+        c.g = decoded_bytes[3*i+1];
+        c.b = decoded_bytes[3*i+2];
         decompressed_colors.push_back(c);
     }
     return decompressed_colors;

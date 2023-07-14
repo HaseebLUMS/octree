@@ -89,20 +89,20 @@ std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std:
     }
 
     JpegEncoder* jpeg_encoder = new JpegEncoder();
-    do_jpeg_compression(orig_colors, compressed_colors, jpeg_encoder);
-    return orig_colors;
+    jpegCompress(orig_colors, compressed_colors, jpeg_encoder);
+    return compressed_colors;
 }
 
-void do_jpeg_compression(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder) {
+void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder) {
     int color_size = orig_colors.size();
     int image_width = 1024;
     int image_height = 1024;
 
-    if(orig_colors.size()/3 < 1024*512) {
-        image_height = 512;
-    } else if(orig_colors.size() / 3 >= 1024 * 1024) {
-        image_width = 2048;
-    }
+    // if(orig_colors.size()/3 < 1024*512) {
+    //     image_height = 512;
+    // } else if(orig_colors.size() / 3 >= 1024 * 1024) {
+    //     image_width = 2048;
+    // }
 
     jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
 }

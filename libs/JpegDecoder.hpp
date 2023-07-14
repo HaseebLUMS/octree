@@ -17,12 +17,6 @@ public:
 
     void decode(vector<uint8_t> compressed_bytes, vector<uint8_t>& decoded_bytes);
 private:
-    tjhandle handle_;
-    int jpegQual_;
-    int nbands_;
-    int flags_;
-    int pixelFormat_;
-    int jpegSubsamp_;
 
 };
 
