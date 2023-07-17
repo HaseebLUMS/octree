@@ -16,9 +16,12 @@ void JpegDecoder::decode(vector<uint8_t> compressed_bytes, vector<uint8_t>& deco
 
     tjDecompressHeader3(handle, &compressed_bytes[0], numCompressedBytes, &width, &height, &jpegSubsamp,
             &jpegColorSpace);
+    
+    // Not sure why tjDecompressHeader3 is setting jpegcolorspace to 1 instead of 0.
+    jpegColorSpace = TJCS_RGB;
 
     unsigned char *imgBuf = (unsigned char *) malloc(width * height * 3);
-    if( tjDecompress2(handle, &compressed_bytes[0], numCompressedBytes, imgBuf ,width,width * 3, height, jpegColorSpace,  0) < 0)
+    if( tjDecompress2(handle, &compressed_bytes[0], numCompressedBytes, imgBuf , width, width * 3, height, jpegColorSpace,  0) < 0)
     {
         printf("decompress failed\n");
         exit(1);

@@ -25,5 +25,5 @@ cc_binary(
     name = "encdec",
     srcs = ["main.cc", "encode.hpp", "decode.hpp", "common.h", "common.cc"],
     deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io", "//:jpegencdec"],
-    data = ["assets/ricardo.ply", "output"]
+    data = ["assets", "output"]
 )

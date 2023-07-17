@@ -8,12 +8,11 @@ JpegEncoder::JpegEncoder() {
     nbands_ = 3;
     flags_ = 0;
     pixelFormat_ = TJPF_RGB;
-    jpegSubsamp_ = TJSAMP_420;
+    jpegSubsamp_ = TJSAMP_444;
 }
 
 int JpegEncoder::encode(vector<uint8_t> rgb_list, vector<uint8_t> &jpeg, int width, int height) {
 
-    printf("[JPEG] start encode\n");
     uint8_t* srcBuf = new uint8_t[width * height * nbands_];
     memset(srcBuf, 0, width * height * nbands_);
     memcpy(srcBuf, &rgb_list[0], rgb_list.size());
@@ -26,7 +25,7 @@ int JpegEncoder::encode(vector<uint8_t> rgb_list, vector<uint8_t> &jpeg, int wid
     jpeg.resize(jpegSize, 0);
     memcpy(&jpeg[0], jpegBuf, jpegSize);
 
-    FILE* qFile= fopen("test_image.jpg", "wb");
+    FILE* qFile= fopen("./output/test_image.jpg", "wb");
     fwrite(jpegBuf, sizeof(uint8_t), jpegSize, qFile);
     if(tj_stat != 0)
     {   
