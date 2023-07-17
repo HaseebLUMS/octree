@@ -4,7 +4,7 @@
 int main() {
     pcl::PointCloud<PointType>::Ptr cloud (new pcl::PointCloud<PointType>);
     pcl::PLYReader Reader;
-    Reader.read("./assets/ricardo.ply", *cloud);
+    Reader.read("./assets/ricardosmall.ply", *cloud);
     std::vector<double> voxel_sizes = {1};
     for (auto vox : voxel_sizes) {
         OctreeType octree(vox);
@@ -26,6 +26,8 @@ int main() {
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
             std::cout << "Color Compression time: " << duration << " milliseconds" << std::endl;
 
+            std::cout << "Compressed Bytes: " << compressed_octree.bytes.size() + compressed_colors.size() << std::endl;
+
             start_time = std::chrono::high_resolution_clock::now();
             auto decompressed_octree = decompressOctree(compressed_octree);
             end_time = std::chrono::high_resolution_clock::now();
@@ -37,7 +39,7 @@ int main() {
             end_time = std::chrono::high_resolution_clock::now();
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
             std::cout << "Color Decompression time: " << duration << " milliseconds" << std::endl;
-            
+
             writeToFile(lp, decompressed_octree, decompressed_colors);
             break;
         }
