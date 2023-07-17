@@ -14,14 +14,21 @@ int main() {
 
         std::vector<double> lost_probabilities = {0, 0.01, 0.1, 0.5, 1, 10, 50, 100};
         for (auto lp : lost_probabilities) {
+            auto start_time = std::chrono::high_resolution_clock::now();
             auto [compressed_octree, points_order] = compressOctree(octree, lp);
             auto compressed_colors = compressColors(cloud, points_order);
+            auto end_time = std::chrono::high_resolution_clock::now();
 
-            std::cout << "# of color bytes: " << compressed_colors.size() << std::endl;
-            std::cout << "# of geometry bytes: " << compressed_octree.bytes.size() << std::endl;
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+            std::cout << "Compression time: " << duration << " milliseconds" << std::endl;
 
+            start_time = std::chrono::high_resolution_clock::now();
             auto decompressed_octree = decompressOctree(compressed_octree);
             auto decompressed_colors = decompressColors(compressed_colors);
+            end_time = std::chrono::high_resolution_clock::now();
+
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+            std::cout << "Decompression time: " << duration << " milliseconds" << std::endl;
             writeToFile(lp, decompressed_octree, decompressed_colors);
             break;
         }
