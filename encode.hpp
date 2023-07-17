@@ -92,7 +92,6 @@ std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree
         .num_of_leaves = num_of_leaves
     };
     
-    std::cout << "Lost Bytes: " << lost_bytes << " / " << flat_bytes.size() << " (" << (100*((double)lost_bytes/flat_bytes.size())) << "), # of PClevels bytes = " << num_of_pclevels_bytes << std::endl;
     return std::make_tuple(result, points_order);
 }
 
