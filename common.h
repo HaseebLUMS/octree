@@ -43,12 +43,4 @@ int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
 
-// Compression
-std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order);
-void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder);
-
-// Decompression
-std::vector<Color> decompressColors(std::vector<uint8_t> compressed_colors);
-void jpegDecompress(std::vector<uint8_t> compressed_bytes, std::vector<uint8_t>& decoded_bytes);
-
 #endif

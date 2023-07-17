@@ -15,6 +15,25 @@ void get_leaves_indices(pcl::octree::OctreeNode* node, std::vector<int> &indices
     container.getPointIndices(indices);
 }
 
+void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder) {
+    int image_width = 512;
+    int image_height = 512;
+
+    if (orig_colors.size()/3 > 512*512 && orig_colors.size()/3 <= 1024*512) {
+        image_width = 1024;
+    } else if (orig_colors.size()/3 > 1024*512 && orig_colors.size()/3 <= 1024*1024) {
+        image_width = 1024;
+        image_height = 1024;
+    } else if (orig_colors.size()/3 > 1024*1024 && orig_colors.size()/3 <= 1024*2048) {
+        image_width = 2048;
+        image_height = 1024;
+    } else if (orig_colors.size()/3 > 1024*2048) {
+        image_width = 2048;
+        image_height = 2048;
+    }
+
+    jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
+}
 
 std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree, double drop_probability) {
     std::vector<std::vector<uint8_t>> compressed_bytes(octree.getTreeDepth() + 1);
@@ -93,23 +112,3 @@ std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std:
     return compressed_colors;
 }
 
-void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder) {
-    int color_size = orig_colors.size();
-    int image_width = 512;
-    int image_height = 512;
-
-    if (orig_colors.size()/3 > 512*512 && orig_colors.size()/3 <= 1024*512) {
-        image_width = 1024;
-    } else if (orig_colors.size()/3 > 1024*512 && orig_colors.size()/3 <= 1024*1024) {
-        image_width = 1024;
-        image_height = 1024;
-    } else if (orig_colors.size()/3 > 1024*1024 && orig_colors.size()/3 <= 1024*2048) {
-        image_width = 2048;
-        image_height = 1024;
-    } else if (orig_colors.size()/3 > 1024*2048) {
-        image_width = 2048;
-        image_height = 2048;
-    }
-
-    jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
-}
