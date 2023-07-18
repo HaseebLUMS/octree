@@ -35,7 +35,7 @@ void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colo
     jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
 }
 
-std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree, double drop_probability) {
+std::tuple<nonNegotiablePartOfCompressedOctree, negotiablePartOfCompressedOctree, std::vector<int>> compressOctree(OctreeType& octree) {
     const auto& tree_depth = octree.getTreeDepth();
     std::vector<std::vector<uint8_t>> compressed_bytes(tree_depth + 1);
     std::vector<int> points_order;
@@ -72,7 +72,6 @@ std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree
     // Not handling that case right now.
 
     std::vector<uint8_t> non_negotiable_bytes;
-    auto num_of_leaves_in_non_negotiable_tree = compressed_bytes.at(compressed_bytes.size()-3).size();
     for (int i = 0; i <= compressed_bytes.size()-3; i++) {
         const auto& level = compressed_bytes[i];
         for (const auto& bytes: level) {
@@ -85,16 +84,20 @@ std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree
         negotiable_bytes.push_back(bytes);
     }
 
-    compressedOctree result = {
+    nonNegotiablePartOfCompressedOctree non_neg_result = {
         .non_negotiable_bytes = non_negotiable_bytes,
-        .negotiable_bytes = negotiable_bytes,
         .root_center = getRootCenter(octree),
         .root_side_length = (float)sqrt(octree.getVoxelSquaredSideLen(0)),
-        .num_of_leaves_in_non_negotiable_tree = num_of_leaves_in_non_negotiable_tree,
-        .num_of_negotiable_bytes = negotiable_bytes.size()
+        .num_of_negotiable_bytes = negotiable_bytes.size(),
     };
 
-    return std::make_tuple(result, points_order);
+    negotiablePartOfCompressedOctree neg_result = {
+        .negotiable_bytes = negotiable_bytes,
+        .num_of_leaves = compressed_bytes.at(compressed_bytes.size()-1).size()
+    };
+
+
+    return std::make_tuple(non_neg_result, neg_result, points_order);
 }
 
 std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order) {

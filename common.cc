@@ -60,6 +60,7 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
     return child_center;
 }
 
+// TODO: Get lost_probability out of here, not being used.
 void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors) {
     
     std::string lp_str = std::to_string(lost_probability);
