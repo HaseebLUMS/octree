@@ -48,5 +48,6 @@ void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, 
 int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
+void showStats(nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, negotiablePartOfCompressedOctree negotiable_comp_part, std::vector<uint8_t> compressed_colors);
 
 #endif

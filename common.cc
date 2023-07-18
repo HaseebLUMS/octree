@@ -124,3 +124,12 @@ std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree)
     }
     return node_counts_per_level;
 }
+
+void showStats(nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, negotiablePartOfCompressedOctree negotiable_comp_part, std::vector<uint8_t> compressed_colors) {
+    double total_bytes = negotiable_comp_part.negotiable_bytes.size() + non_negotiable_comp_part.non_negotiable_bytes.size();
+    std::cout << "Non Negotiable Bytes: " << non_negotiable_comp_part.non_negotiable_bytes.size() << std::endl;
+    std::cout << "Negotiable Bytes: " << negotiable_comp_part.negotiable_bytes.size() << std::endl;
+    std::cout << "Total Geometry Bytes: " << total_bytes << std::endl;
+    std::cout << "Total Color Bytes: " << compressed_colors.size() << std::endl;
+    std::cout << "Negotiable share (among geometry): " << (100.0*negotiable_comp_part.negotiable_bytes.size())/total_bytes << std::endl;
+}
