@@ -5,14 +5,14 @@ bool isLastLevel(int curr_node_index, int nodes_in_last_level, int total_nodes) 
     return curr_node_index >= starting_index_of_last_level;
 }
 
-std::vector<Eigen::Vector4f> decompressOctree(compressedOctree compressed_octree) {
-    auto compressed_bytes = compressed_octree.bytes;
-    
+std::vector<Eigen::Vector4f> decompressNonNegotiableBytes(compressedOctree compressed_octree) {
+    auto compressed_bytes = compressed_octree.non_negotiable_bytes;
+
     Eigen::Vector4f* centers = (Eigen::Vector4f*) malloc(
-        compressed_octree.num_of_leaves*sizeof(Eigen::Vector4f));
+        compressed_octree.num_of_leaves_in_non_negotiable_tree*sizeof(Eigen::Vector4f));
 
     Eigen::Vector4f* next_centers = (Eigen::Vector4f*) malloc(
-        compressed_octree.num_of_leaves*sizeof(Eigen::Vector4f));
+        compressed_octree.num_of_leaves_in_non_negotiable_tree*sizeof(Eigen::Vector4f));
 
     centers[0].x() = compressed_octree.root_center[0];
     centers[0].y() = compressed_octree.root_center[1];
@@ -30,13 +30,6 @@ std::vector<Eigen::Vector4f> decompressOctree(compressedOctree compressed_octree
         for(int i = 0; i < count_centers ; i++) {
             auto current_byte = compressed_bytes[count_bytes + i];
 
-            if (current_byte == 0 && false == isLastLevel(
-                count_bytes + i, compressed_octree.num_of_leaves, compressed_bytes.size())) {
-                // Lost Byte
-                next_centers[count_next_centers] = centers[i];
-                count_next_centers++;
-            }
-
             for(int k = 0 ; k < 8 ; k++) {
                 if(((current_byte >> k) & 1 )!= 0) {
                     Eigen::Vector4f child_center = getChildCenter(centers[i], current_side_length, k);
@@ -53,12 +46,17 @@ std::vector<Eigen::Vector4f> decompressOctree(compressedOctree compressed_octree
     }
 
     std::vector<Eigen::Vector4f> decompressed_centers;
-    for (int i = 0; i < compressed_octree.num_of_leaves; i++) {
+    for (int i = 0; i < compressed_octree.num_of_leaves_in_non_negotiable_tree; i++) {
         auto curr_center = *(centers + i);
         decompressed_centers.push_back(curr_center);
     }
 
     return decompressed_centers;
+}
+
+std::vector<Eigen::Vector4f> decompressNegotiableBytes(compressedOctree compressed_octree) {
+    // it should get the output of decompressNonNegotiableBytes i.e., centers and side length
+    
 }
 
 std::vector<Color> decompressColors(std::vector<uint8_t> compressed_bytes) {

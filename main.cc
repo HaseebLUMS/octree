@@ -26,21 +26,25 @@ int main() {
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
             std::cout << "Color Compression time: " << duration << " milliseconds" << std::endl;
 
-            std::cout << "Compressed Bytes: " << compressed_octree.bytes.size() + compressed_colors.size() << std::endl;
+            double total_bytes = compressed_octree.negotiable_bytes.size()+compressed_octree.non_negotiable_bytes.size();
+            std::cout << "Non Negotiable Bytes: " << compressed_octree.non_negotiable_bytes.size() << std::endl;
+            std::cout << "Negotiable Bytes: " << compressed_octree.negotiable_bytes.size() << std::endl;
+            std::cout << "Total Bytes: " << total_bytes << std::endl;
+            std::cout << "Negotiable share: " << (100.0*compressed_octree.negotiable_bytes.size())/total_bytes << std::endl;
 
-            start_time = std::chrono::high_resolution_clock::now();
-            auto decompressed_octree = decompressOctree(compressed_octree);
-            end_time = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-            std::cout << "Geometry Decompression time: " << duration << " milliseconds" << std::endl;
+            // start_time = std::chrono::high_resolution_clock::now();
+            // auto decompressed_octree = decompressOctree(compressed_octree);
+            // end_time = std::chrono::high_resolution_clock::now();
+            // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+            // std::cout << "Geometry Decompression time: " << duration << " milliseconds" << std::endl;
 
-            start_time = std::chrono::high_resolution_clock::now();
-            auto decompressed_colors = decompressColors(compressed_colors);
-            end_time = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-            std::cout << "Color Decompression time: " << duration << " milliseconds" << std::endl;
+            // start_time = std::chrono::high_resolution_clock::now();
+            // auto decompressed_colors = decompressColors(compressed_colors);
+            // end_time = std::chrono::high_resolution_clock::now();
+            // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+            // std::cout << "Color Decompression time: " << duration << " milliseconds" << std::endl;
 
-            writeToFile(lp, decompressed_octree, decompressed_colors);
+            // writeToFile(lp, decompressed_octree, decompressed_colors);
             break;
         }
     }

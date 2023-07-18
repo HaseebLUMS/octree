@@ -23,8 +23,10 @@ typedef pcl::PointCloud<PointType> PointCloudType;
 typedef pcl::octree::OctreePointCloud<PointType> OctreeType;
 
 struct compressedOctree {
-    std::vector<uint8_t> bytes;
-    uint64_t num_of_leaves;
+    std::vector<uint8_t> non_negotiable_bytes;
+    std::vector<uint8_t> negotiable_bytes;
+    uint64_t num_of_leaves_in_non_negotiable_tree;
+    uint64_t num_of_negotiable_bytes;
     Eigen::Vector3f root_center;
     float root_side_length;
 };
