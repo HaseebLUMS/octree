@@ -30,7 +30,7 @@ struct negotiablePartOfCompressedOctree {
 struct nonNegotiablePartOfCompressedOctree {
     std::vector<uint8_t> non_negotiable_bytes;
     uint64_t num_of_negotiable_bytes;
-    Eigen::Vector3f root_center;
+    std::vector<float> root_center;
     float root_side_length;
 };
 
@@ -42,7 +42,7 @@ struct Color {
     Color(uint8_t r, uint8_t g, uint8_t b): r(r), g(g), b(b) {}
 };
 
-Eigen::Vector3f getRootCenter(OctreeType& octree);
+std::vector<float> getRootCenter(OctreeType& octree);
 Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, uint8_t bit_pos);
 void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors);
 int getRandomNumber(int x, int y);
