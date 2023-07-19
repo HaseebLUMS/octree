@@ -35,21 +35,19 @@ void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colo
     jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
 }
 
-std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree, double drop_probability) {
+std::tuple<nonNegotiablePartOfCompressedOctree, negotiablePartOfCompressedOctree, std::vector<int>> compressOctree(OctreeType& octree) {
     const auto& tree_depth = octree.getTreeDepth();
     std::vector<std::vector<uint8_t>> compressed_bytes(tree_depth + 1);
     std::vector<int> points_order;
 
     auto it = octree.depth_begin();
     auto it_end = octree.depth_end();
-    uint64_t num_of_leaves = 0;
 
     while (it != it_end) {
         const auto& current_level = it.getCurrentOctreeDepth();
         const uint8_t& occupancy_byte = it.getNodeConfiguration();
 
         if (tree_depth == current_level) {
-            num_of_leaves++;
             std::vector<int> point_indices;
             get_leaves_indices(it.getCurrentOctreeNode(), point_indices);
             if (point_indices.size() != 1) {
@@ -63,21 +61,43 @@ std::tuple<compressedOctree, std::vector<int>> compressOctree(OctreeType& octree
         it++;
     }
 
-    std::vector<uint8_t> flat_bytes;
-    for (const auto& level : compressed_bytes) {
+    if (compressed_bytes.size() < 3) {
+        std::cerr << "[compressOctree] Less than 3 layer? What are you even doing?" << std::endl;
+        exit(1);
+    }
+
+    // Note: Last Layer is always 000...
+    // So second last layer is negotiable.
+    // In cases with crazy high resolution, we might see several levels that are negotiable.
+    // Not handling that case right now.
+
+    std::vector<uint8_t> non_negotiable_bytes;
+    for (int i = 0; i <= compressed_bytes.size()-3; i++) {
+        const auto& level = compressed_bytes[i];
         for (const auto& bytes: level) {
-            flat_bytes.push_back(bytes);
+            non_negotiable_bytes.push_back(bytes);
         }
     }
 
-    compressedOctree result = {
-        .bytes = flat_bytes,
+    std::vector<uint8_t> negotiable_bytes;
+    for (const auto& bytes: compressed_bytes.at(compressed_bytes.size()-2)) {
+        negotiable_bytes.push_back(bytes);
+    }
+
+    nonNegotiablePartOfCompressedOctree non_neg_result = {
+        .non_negotiable_bytes = non_negotiable_bytes,
         .root_center = getRootCenter(octree),
         .root_side_length = (float)sqrt(octree.getVoxelSquaredSideLen(0)),
-        .num_of_leaves = num_of_leaves
+        .num_of_negotiable_bytes = negotiable_bytes.size(),
     };
-    
-    return std::make_tuple(result, points_order);
+
+    negotiablePartOfCompressedOctree neg_result = {
+        .negotiable_bytes = negotiable_bytes,
+        .num_of_leaves = compressed_bytes.at(compressed_bytes.size()-1).size()
+    };
+
+
+    return std::make_tuple(non_neg_result, neg_result, points_order);
 }
 
 std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order) {
