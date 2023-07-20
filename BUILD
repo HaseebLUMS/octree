@@ -27,3 +27,13 @@ cc_binary(
     deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io", "//:jpegencdec"],
     data = ["assets", "output"]
 )
+
+cc_binary(
+    name = "server",
+    srcs = ["server.cc"],
+)
+
+cc_binary(
+    name = "client",
+    srcs = ["client.cc"],
+)
