@@ -12,6 +12,24 @@ const char* SERVER_TCP_IP = "127.0.0.1";
 const int TCP_PORT = 9999;
 const int UDP_PORT = 8888;
 
+std::chrono::microseconds getInterPacketDuration(int tcp_client_socket) {
+    tcp_connection_info info;
+    socklen_t len = sizeof(info);
+    if (getsockopt(tcp_client_socket, IPPROTO_TCP, TCP_CONNECTION_INFO, &info, &len) != 0) {
+        perror("getsockopt failed\n");
+        exit(1);
+    }
+
+    const double rtt_ms = std::max((double)info.tcpi_srtt, 0.1);
+    const double owd_ms = rtt_ms / 2; // rough
+    const double owds_in_a_sec = 1000/owd_ms;
+    const double sending_rate_byte_per_sec = info.tcpi_snd_cwnd * owds_in_a_sec;
+    const int packet_size_in_bytes = 1400; // conservative estimate
+
+    auto interval = std::chrono::microseconds(static_cast<long long>(1000000.0 * packet_size_in_bytes / sending_rate_byte_per_sec));
+    return interval;
+}
+
 void handleTCPConnection(int tcp_client_socket) {
     while (true) {
         char buffer[1024] = {0};
@@ -28,25 +46,8 @@ void handleTCPConnection(int tcp_client_socket) {
         std::cout << "Received TCP message from client: " << buffer << std::endl;
 
         send(tcp_client_socket, buffer, strlen(buffer), 0);
-
-        tcp_connection_info info;
-        socklen_t len = sizeof(info);
-        if (getsockopt(tcp_client_socket, IPPROTO_TCP, TCP_CONNECTION_INFO, &info, &len) != 0) {
-            perror("getsockopt failed\n");
-            return;
-        }
-
-        std::cout << "tcpi_snd_cwnd: " << info.tcpi_snd_cwnd << std::endl;
-        std::cout << "tcpi_rttcur: " << info.tcpi_rttcur << std::endl;
-        std::cout << "tcpi_snd_wnd: " << info.tcpi_snd_wnd << std::endl;
-
-        const int sending_rate = 1000; // bytes per second
-        const int packet_size = 1500 - 8 - 20; // 1500 MTU, 8 UDP header, 20 IP header
-
-        auto interval = std::chrono::nanoseconds(static_cast<long long>(1000000000.0 * packet_size / sending_rate));
-        std::this_thread::sleep_for(interval);
-
-        // To be continued!
+        auto duration = getInterPacketDuration(tcp_client_socket);
+        // use this duration to pace the UDP sends
     }
 
     close(tcp_client_socket);
