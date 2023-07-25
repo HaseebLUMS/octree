@@ -30,10 +30,10 @@ cc_binary(
 
 cc_binary(
     name = "server",
-    srcs = ["server.cc"],
+    srcs = ["server.cc", "config.h"],
 )
 
 cc_binary(
     name = "client",
-    srcs = ["client.cc"],
+    srcs = ["client.cc", "config.h"],
 )

@@ -7,10 +7,9 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <thread>
+#include <vector>
 
-const char* SERVER_TCP_IP = "127.0.0.1";
-const int TCP_PORT = 9999;
-const int UDP_PORT = 8888;
+#include "config.h"
 
 std::chrono::microseconds getInterPacketDuration(int tcp_client_socket) {
     tcp_connection_info info;
@@ -30,7 +29,22 @@ std::chrono::microseconds getInterPacketDuration(int tcp_client_socket) {
     return interval;
 }
 
-void handleTCPConnection(int tcp_client_socket) {
+void sendUDPData(int udp_socket, struct sockaddr_in client_addr, std::chrono::microseconds duration) {
+    for (int i = 0; i < 3; i++) {
+        std::string message = "Hello, UDP!";
+        int bytes_sent = sendto(udp_socket, message.c_str(), message.size(), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+        if (bytes_sent < 0) {
+            std::cerr << "Error sending data." << std::endl;
+            close(udp_socket);
+            return;
+        }
+        std::this_thread::sleep_for(duration);
+    }
+}
+
+void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_in client_addr) {
+    client_addr.sin_port = htons(CLIENT_UDP_PORT);
+
     while (true) {
         char buffer[1024] = {0};
         int bytes_received = recv(tcp_client_socket, buffer, sizeof(buffer), 0);
@@ -43,17 +57,18 @@ void handleTCPConnection(int tcp_client_socket) {
             break;
         }
 
-        std::cout << "Received TCP message from client: " << buffer << std::endl;
+        std::string message = "Hello, TCP!";
+        send(tcp_client_socket, message.c_str(), message.size(), 0);
 
-        send(tcp_client_socket, buffer, strlen(buffer), 0);
         auto duration = getInterPacketDuration(tcp_client_socket);
-        // use this duration to pace the UDP sends
+        sendUDPData(udp_socket, client_addr, duration);
     }
 
     close(tcp_client_socket);
 }
 
 int main() {
+    // Setup TCP socket
     int tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_socket == -1) {
         std::cerr << "Error creating TCP socket." << std::endl;
@@ -62,8 +77,8 @@ int main() {
 
     sockaddr_in tcp_server_addr;
     tcp_server_addr.sin_family = AF_INET;
-    tcp_server_addr.sin_port = htons(TCP_PORT);
-    inet_pton(AF_INET, SERVER_TCP_IP, &(tcp_server_addr.sin_addr));
+    tcp_server_addr.sin_port = htons(SERVER_TCP_PORT);
+    inet_pton(AF_INET, SERVER_IP, &(tcp_server_addr.sin_addr));
 
     if (bind(tcp_socket, (struct sockaddr *)&tcp_server_addr, sizeof(tcp_server_addr)) == -1) {
         std::cerr << "Error binding TCP socket." << std::endl;
@@ -77,19 +92,45 @@ int main() {
         return 1;
     }
 
-    std::cout << "Server is listening for TCP connections on port " << TCP_PORT << std::endl;
+    std::cout << "Server is listening for TCP connections on port " << SERVER_TCP_PORT << std::endl;
 
+    // Setup UDP socket
+    int udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udp_socket < 0) {
+        std::cerr << "Error creating UDP socket." << std::endl;
+        return 1;
+    }
+
+    struct sockaddr_in server_udp_addr;
+    std::memset(&server_udp_addr, 0, sizeof(server_udp_addr));
+    server_udp_addr.sin_family = AF_INET;
+    server_udp_addr.sin_port = htons(SERVER_UDP_PORT); // Replace 12345 with the port you want to listen on
+    inet_pton(AF_INET, SERVER_IP, &(server_udp_addr.sin_addr));
+
+    if (bind(udp_socket, (struct sockaddr*)&server_udp_addr, sizeof(server_udp_addr)) < 0) {
+        std::cerr << "Error binding UDP socket." << std::endl;
+        close(udp_socket);
+        return 1;
+    }
+
+    std::vector<std::thread> conn_threads;
     while (true) {
-        int tcp_client_socket = accept(tcp_socket, nullptr, nullptr);
+        struct sockaddr_in client_addr;
+        socklen_t client_addr_len = sizeof(client_addr);
+        int tcp_client_socket = accept(tcp_socket, (struct sockaddr*)&client_addr, &client_addr_len);
         if (tcp_client_socket == -1) {
             std::cerr << "Error accepting TCP connection." << std::endl;
             continue;
         }
 
-        handleTCPConnection(tcp_client_socket);
+        conn_threads.emplace_back(handleTCPConnection, tcp_client_socket, udp_socket, client_addr);
+    }
+
+    for (auto& thread : conn_threads) {
+        thread.join();
     }
 
     close(tcp_socket);
-
+    close(udp_socket);
     return 0;
 }
