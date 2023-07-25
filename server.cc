@@ -11,7 +11,7 @@
 
 #include "config.h"
 
-std::chrono::microseconds getInterPacketDuration(int tcp_client_socket) {
+std::chrono::microseconds getInterPacketDuration(int tcp_client_socket, const int packet_size_in_bytes) {
     tcp_connection_info info;
     socklen_t len = sizeof(info);
     if (getsockopt(tcp_client_socket, IPPROTO_TCP, TCP_CONNECTION_INFO, &info, &len) != 0) {
@@ -23,27 +23,47 @@ std::chrono::microseconds getInterPacketDuration(int tcp_client_socket) {
     const double owd_ms = rtt_ms / 2; // rough
     const double owds_in_a_sec = 1000/owd_ms;
     const double sending_rate_byte_per_sec = info.tcpi_snd_cwnd * owds_in_a_sec;
-    const int packet_size_in_bytes = 1400; // conservative estimate
 
     auto interval = std::chrono::microseconds(static_cast<long long>(1000000.0 * packet_size_in_bytes / sending_rate_byte_per_sec));
     return interval;
 }
 
-void sendUDPData(int udp_socket, struct sockaddr_in client_addr, std::chrono::microseconds duration) {
-    for (int i = 0; i < 3; i++) {
-        std::string message = "Hello, UDP!";
-        int bytes_sent = sendto(udp_socket, message.c_str(), message.size(), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
-        if (bytes_sent < 0) {
-            std::cerr << "Error sending data." << std::endl;
-            close(udp_socket);
-            return;
+int sendUDPData(int udp_socket, struct sockaddr_in client_addr, std::chrono::microseconds duration, int total_data, char* data_buffer) {
+    int total_sent = 0;
+    while (total_sent < total_data) {
+        int bytes_sent = sendto(udp_socket, data_buffer + total_sent, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+        if (bytes_sent == -1) {
+            return 1;
         }
+        total_sent += bytes_sent;
         std::this_thread::sleep_for(duration);
     }
+
+    return 0;
+}
+
+int sendTCPData(int tcp_client_socket, int total_data, char* data_buffer) {
+    int total_sent = 0;
+    while (total_sent < total_data) {
+        int bytes_sent = send(tcp_client_socket, data_buffer + total_sent, std::min(BUFFER_SIZE, total_data-total_sent), 0);
+        if (bytes_sent == -1) {
+            std::cerr << "Sending data failed." << std::endl;
+            return 1;
+        }
+        total_sent += bytes_sent;
+    }
+
+    return 0;
 }
 
 void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_in client_addr) {
     client_addr.sin_port = htons(CLIENT_UDP_PORT);
+
+    int tcp_data_size = DATA_SIZE;
+    std::vector<char> tcp_data_buffer(tcp_data_size, 'A');
+
+    int udp_data_size = 2*DATA_SIZE;
+     std::vector<char> udp_data_buffer(udp_data_size, 'B');
 
     while (true) {
         char buffer[1024] = {0};
@@ -57,11 +77,13 @@ void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_
             break;
         }
 
-        std::string message = "Hello, TCP!";
-        send(tcp_client_socket, message.c_str(), message.size(), 0);
+        auto res = sendTCPData(tcp_client_socket, tcp_data_size, tcp_data_buffer.data());
+        if (res != 0) return;
 
-        auto duration = getInterPacketDuration(tcp_client_socket);
-        sendUDPData(udp_socket, client_addr, duration);
+        auto duration = getInterPacketDuration(tcp_client_socket, BUFFER_SIZE);
+
+        res = sendUDPData(udp_socket, client_addr, duration, udp_data_size, udp_data_buffer.data());
+        if (res != 0) return;
     }
 
     close(tcp_client_socket);

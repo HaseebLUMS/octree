@@ -6,6 +6,25 @@
 
 #include "config.h"
 
+void receiveData(int socket, int total_data_to_receive) {
+    char data_buffer[BUFFER_SIZE];
+
+    int total_received = 0;
+    while (total_received < total_data_to_receive) {
+        int bytes_received = recv(socket, data_buffer, BUFFER_SIZE, 0);
+        if (bytes_received == -1) {
+            std::cerr << "Receiving data failed." << std::endl;
+            return;
+        } else if (bytes_received == 0) {
+            break;
+        }
+
+        total_received += bytes_received;
+    }
+
+    std::cout << "Received " << total_received << " bytes." << std::endl;
+}
+
 int main() {
     int tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_socket == -1) {
@@ -53,20 +72,8 @@ int main() {
 
         send(tcp_socket, message.c_str(), message.size(), 0);
 
-        char buffer[1024] = {0};
-        int bytes_received = recv(tcp_socket, buffer, sizeof(buffer), 0);
-        if (bytes_received == -1) {
-            std::cerr << "Error receiving TCP response from server." << std::endl;
-        } else {
-            std::cout << "Received TCP response from server: " << buffer << std::endl;
-        }
-
-        bytes_received = recv(udp_socket, buffer, sizeof(buffer), 0);
-        if (bytes_received == -1) {
-            std::cerr << "Error receiving UDP messgage from server." << std::endl;
-        } else {
-            std::cout << "Received UDP messgage from server: " << buffer << std::endl;
-        }
+        receiveData(tcp_socket, DATA_SIZE);
+        receiveData(udp_socket, 2*DATA_SIZE);
     }
 
     close(udp_socket);
