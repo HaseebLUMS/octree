@@ -8,4 +8,4 @@ const int CLIENT_TCP_PORT = 9999;
 const int CLIENT_UDP_PORT = 8887;
 
 const int BUFFER_SIZE = 1024;
-const int DATA_SIZE = 10* 1024 * 1024; // 10 MB of data
+const int DATA_SIZE = 100* 1024 * 1024;
