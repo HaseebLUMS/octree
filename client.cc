@@ -25,7 +25,7 @@ void receiveData(int socket, int total_data_to_receive) {
     std::cout << "Received " << total_received << " bytes." << std::endl;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     int tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_socket == -1) {
         std::cerr << "Error creating TCP socket." << std::endl;
@@ -73,7 +73,11 @@ int main() {
         send(tcp_socket, message.c_str(), message.size(), 0);
 
         receiveData(tcp_socket, DATA_SIZE);
-        receiveData(udp_socket, 2*DATA_SIZE);
+        if (message == "udp") {
+            receiveData(udp_socket, 2*DATA_SIZE);
+        } else {
+            receiveData(tcp_socket, 2*DATA_SIZE);
+        }
     }
 
     close(udp_socket);

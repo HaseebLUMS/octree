@@ -76,20 +76,31 @@ void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_
             std::cout << "Client disconnected." << std::endl;
             break;
         }
-
+        auto start = std::chrono::high_resolution_clock::now();
+        
+        std::string used_scheme = "TCP+";
         auto res = sendTCPData(tcp_client_socket, tcp_data_size, tcp_data_buffer.data());
         if (res != 0) return;
-
-        auto duration = getInterPacketDuration(tcp_client_socket, BUFFER_SIZE);
-
-        res = sendUDPData(udp_socket, client_addr, duration, udp_data_size, udp_data_buffer.data());
+        
+        if (strncmp(buffer, "udp", 3) == 0) {
+            used_scheme += "UDP";
+            auto duration = getInterPacketDuration(tcp_client_socket, BUFFER_SIZE);
+            res = sendUDPData(udp_socket, client_addr, duration, udp_data_size, udp_data_buffer.data());
+        } else {
+            used_scheme += "TCP";
+            res = sendTCPData(tcp_client_socket, udp_data_size, udp_data_buffer.data());
+        }
         if (res != 0) return;
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "The transport scheme " << used_scheme << " took " << elapased.count() << " milliseconds." << std::endl;
     }
 
     close(tcp_client_socket);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     // Setup TCP socket
     int tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_socket == -1) {
