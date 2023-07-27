@@ -31,13 +31,15 @@ std::chrono::microseconds getInterPacketDuration(int tcp_client_socket, const in
 int sendUDPData(int udp_socket, struct sockaddr_in client_addr, std::chrono::microseconds duration, int total_data, char* data_buffer) {
     int total_sent = 0;
     while (total_sent < total_data) {
-        int bytes_sent = sendto(udp_socket, data_buffer + total_sent, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+        int bytes_sent = sendto(udp_socket, data_buffer + total_sent, std::min(BUFFER_SIZE, total_data-total_sent), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+
         if (bytes_sent == -1) {
             return 1;
         }
         total_sent += bytes_sent;
-        std::this_thread::sleep_for(duration);
+        // std::this_thread::sleep_for(duration);
     }
+    std::cout << "Bytes sent: " << total_sent << std::endl;
 
     return 0;
 }
@@ -52,6 +54,7 @@ int sendTCPData(int tcp_client_socket, int total_data, char* data_buffer) {
         }
         total_sent += bytes_sent;
     }
+    std::cout << "Bytes sent: " << total_sent << std::endl;
 
     return 0;
 }
