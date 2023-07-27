@@ -62,10 +62,10 @@ int sendTCPData(int tcp_client_socket, int total_data, char* data_buffer) {
 void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_in client_addr) {
     client_addr.sin_port = htons(CLIENT_UDP_PORT);
 
-    int tcp_data_size = DATA_SIZE;
+    int tcp_data_size = RELIABLE_DATA_SIZE;
     std::vector<char> tcp_data_buffer(tcp_data_size, 'A');
 
-    int udp_data_size = 2*DATA_SIZE;
+    int udp_data_size = UNRELIABLE_DATA_SIZE;
      std::vector<char> udp_data_buffer(udp_data_size, 'B');
 
     while (true) {

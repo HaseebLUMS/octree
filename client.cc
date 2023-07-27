@@ -13,7 +13,7 @@ void receiveData(int socket, int total_data_to_receive) {
     while (total_received < total_data_to_receive) {
         int bytes_received = recv(socket, data_buffer, BUFFER_SIZE, 0);
         if (bytes_received == -1) {
-            std::cerr << "Receiving data failed." << std::endl;
+            std::cerr << "Receiving data failed. Received " <<  total_received << " out of " << total_data_to_receive << std::endl;
             return;
         } else if (bytes_received == 0) {
             break;
@@ -55,6 +55,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 100000;
+    setsockopt(udp_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
     if (connect(tcp_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         std::cerr << "Error connecting to TCP server." << std::endl;
         close(tcp_socket);
@@ -72,11 +77,11 @@ int main(int argc, char* argv[]) {
 
         send(tcp_socket, message.c_str(), message.size(), 0);
 
-        receiveData(tcp_socket, DATA_SIZE);
+        receiveData(tcp_socket, RELIABLE_DATA_SIZE);
         if (message == "udp") {
-            receiveData(udp_socket, 2*DATA_SIZE);
+            receiveData(udp_socket, UNRELIABLE_DATA_SIZE);
         } else {
-            receiveData(tcp_socket, 2*DATA_SIZE);
+            receiveData(tcp_socket, UNRELIABLE_DATA_SIZE);
         }
     }
 
