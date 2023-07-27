@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
     timeout.tv_sec = 1;
     timeout.tv_usec = 100000;
     setsockopt(udp_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(tcp_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
     if (connect(tcp_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         std::cerr << "Error connecting to TCP server." << std::endl;
@@ -74,7 +76,7 @@ int main(int argc, char* argv[]) {
         if (message == "exit") {
             break;
         }
-
+        auto start = std::chrono::high_resolution_clock::now();
         send(tcp_socket, message.c_str(), message.size(), 0);
 
         receiveData(tcp_socket, RELIABLE_DATA_SIZE);
@@ -83,6 +85,10 @@ int main(int argc, char* argv[]) {
         } else {
             receiveData(tcp_socket, UNRELIABLE_DATA_SIZE);
         }
+        
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        std::cout << "The transport took " << elapased.count() << " milliseconds." << std::endl;
     }
 
     close(udp_socket);

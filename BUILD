@@ -31,9 +31,11 @@ cc_binary(
 cc_binary(
     name = "server",
     srcs = ["server.cc", "config.h"],
+    linkopts = ["-lpthread"],
 )
 
 cc_binary(
     name = "client",
     srcs = ["client.cc", "config.h"],
+    linkopts = ["-lpthread"],
 )
