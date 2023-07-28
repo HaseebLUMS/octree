@@ -8,22 +8,21 @@
 #include "config.h"
 
 void receiveData(int socket, int total_data_to_receive) {
-    char data_buffer[BUFFER_SIZE];
+    char data_buffer[BUFFER_SIZE_WITH_EXTRA_ROOM];
 
     int total_received = 0;
     while (total_received < total_data_to_receive) {
-        int bytes_received = recv(socket, data_buffer, BUFFER_SIZE, 0);
-        if (bytes_received == -1) {
-            std::cerr << "Receiving data failed. Received " <<  total_received << " out of " << total_data_to_receive << std::endl;
-            return;
-        } else if (bytes_received == 0) {
+        int bytes_received = 0;
+        bytes_received = recv(socket, data_buffer, BUFFER_SIZE_WITH_EXTRA_ROOM, 0);
+
+        if (bytes_received <= 0) {
             break;
         }
 
         total_received += bytes_received;
     }
 
-    std::cout << "Received " << total_received << " bytes." << std::endl;
+    std::cout << "Received " << (100*((double)total_received/total_data_to_receive)) << " of " << total_data_to_receive << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -33,10 +32,25 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    sockaddr_in server_addr;
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(CLIENT_TCP_PORT);
-    inet_pton(AF_INET, CLIENT_IP, &(server_addr.sin_addr));
+    int client_tcp_port = CLIENT_TCP_PORT;
+    if (argc >= 2) client_tcp_port = atoi(argv[1]);
+
+    sockaddr_in server_tcp_addr;
+    server_tcp_addr.sin_family = AF_INET;
+    server_tcp_addr.sin_port = htons(SERVER_TCP_PORT);
+    inet_pton(AF_INET, SERVER_IP, &(server_tcp_addr.sin_addr));
+
+    struct sockaddr_in client_tcp_addr;
+    memset(&client_tcp_addr, 0, sizeof(client_tcp_addr));
+    client_tcp_addr.sin_family = AF_INET;
+    client_tcp_addr.sin_port = htons(client_tcp_port);
+    client_tcp_addr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(tcp_socket, (struct sockaddr*)&client_tcp_addr, sizeof(client_tcp_addr)) == -1) {
+        perror("Error binding TCP Socket");
+        close(tcp_socket);
+        exit(EXIT_FAILURE);
+    }
 
     int udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if (udp_socket < 0) {
@@ -56,13 +70,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    struct timeval timeout;
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 100000;
-    setsockopt(udp_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-    setsockopt(tcp_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    struct timeval timeout_udp;
+    timeout_udp.tv_sec = 0;
+    timeout_udp.tv_usec = 15000;
+    setsockopt(udp_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout_udp, sizeof(timeout_udp));
 
-    if (connect(tcp_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+    if (connect(tcp_socket, (struct sockaddr *)&server_tcp_addr, sizeof(server_tcp_addr)) == -1) {
         std::cerr << "Error connecting to TCP server." << std::endl;
         close(tcp_socket);
         return 1;
@@ -79,13 +92,13 @@ int main(int argc, char* argv[]) {
         auto start = std::chrono::high_resolution_clock::now();
         send(tcp_socket, message.c_str(), message.size(), 0);
 
-        receiveData(tcp_socket, RELIABLE_DATA_SIZE);
         if (message == "udp") {
+            receiveData(tcp_socket, RELIABLE_DATA_SIZE);
             receiveData(udp_socket, UNRELIABLE_DATA_SIZE);
         } else {
-            receiveData(tcp_socket, UNRELIABLE_DATA_SIZE);
+            receiveData(tcp_socket, RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE);
         }
-        
+
         auto end = std::chrono::high_resolution_clock::now();
         auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "The transport took " << elapased.count() << " milliseconds." << std::endl;

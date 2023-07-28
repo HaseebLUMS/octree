@@ -11,24 +11,31 @@
 
 #include "config.h"
 
-std::chrono::microseconds getInterPacketDuration(int tcp_client_socket, const int packet_size_in_bytes) {
-    tcp_info info;
-    socklen_t len = sizeof(info);
-    if (getsockopt(tcp_client_socket, IPPROTO_TCP, TCP_INFO, &info, &len) != 0) {
-        perror("getsockopt failed\n");
-        exit(1);
-    }
+// std::chrono::microseconds getInterPacketDurationUsingTCPInfo(int tcp_client_socket, const int packet_size_in_bytes) {
+//     tcp_info info;
+//     socklen_t len = sizeof(info);
+//     if (getsockopt(tcp_client_socket, IPPROTO_TCP, TCP_INFO, &info, &len) != 0) {
+//         perror("getsockopt failed\n");
+//         exit(1);
+//     }
 
-    const double rtt_ms = std::max((double)info.tcpi_rtt, 0.1);
-    const double owd_ms = rtt_ms / 2; // rough
-    const double owds_in_a_sec = 1000/owd_ms;
-    const double sending_rate_byte_per_sec = (info.tcpi_snd_cwnd*info.tcpi_pmtu) * owds_in_a_sec;
+//     const double rtt_ms = std::max((double)info.tcpi_rtt, 0.1);
+//     const double owd_ms = rtt_ms / 2; // rough
+//     const double owds_in_a_sec = 1000/owd_ms;
+//     const double sending_rate_byte_per_sec = (info.tcpi_snd_cwnd*info.tcpi_pmtu) * owds_in_a_sec;
 
-    auto interval = std::chrono::microseconds(static_cast<long long>(1000000.0 * packet_size_in_bytes / sending_rate_byte_per_sec));
+//     auto interval = std::chrono::microseconds(static_cast<long long>(1000000.0 * packet_size_in_bytes / sending_rate_byte_per_sec));
+//     std::cout << "Sleeping duration: " << interval.count() << " microseconds" << std::endl;
+//     std::cout << "RTT: " << info.tcpi_rtt << " ms" << std::endl;
+//     std::cout << "CWND: " << info.tcpi_snd_cwnd << std::endl;
+//     std::cout << "PMTU: " << info.tcpi_pmtu << std::endl;
+//     return interval;
+// }
+
+std::chrono::microseconds getInterPacketDuration(const int packet_size_in_bytes, const int packet_rate_in_Mbps) {
+    const int packet_size_in_bits = packet_size_in_bytes * 8;
+    auto interval = std::chrono::microseconds(static_cast<long long>(1000000.0 * packet_size_in_bits / (packet_rate_in_Mbps*1000000)));
     std::cout << "Sleeping duration: " << interval.count() << " microseconds" << std::endl;
-    std::cout << "RTT: " << info.tcpi_rtt << " ms" << std::endl;
-    std::cout << "CWND: " << info.tcpi_snd_cwnd << std::endl;
-    std::cout << "PMTU: " << info.tcpi_pmtu << std::endl;
     return interval;
 }
 
@@ -41,7 +48,7 @@ int sendUDPData(int udp_socket, struct sockaddr_in client_addr, std::chrono::mic
             return 1;
         }
         total_sent += bytes_sent;
-        // std::this_thread::sleep_for(duration);
+        std::this_thread::sleep_for(duration);
     }
     std::cout << "Bytes sent: " << total_sent << std::endl;
 
@@ -70,8 +77,11 @@ void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_
     std::vector<char> tcp_data_buffer(tcp_data_size, 'A');
 
     int udp_data_size = UNRELIABLE_DATA_SIZE;
-     std::vector<char> udp_data_buffer(udp_data_size, 'B');
-
+    std::vector<char> udp_data_buffer(udp_data_size, 'B');
+    udp_data_buffer[udp_data_size-1] = 'C';
+    
+    auto duration = getInterPacketDuration(BUFFER_SIZE, PACKET_RATE_Mbps);
+    
     while (true) {
         char buffer[1024] = {0};
         int bytes_received = recv(tcp_client_socket, buffer, sizeof(buffer), 0);
@@ -91,7 +101,7 @@ void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_
         
         if (strncmp(buffer, "udp", 3) == 0) {
             used_scheme += "UDP";
-            auto duration = getInterPacketDuration(tcp_client_socket, BUFFER_SIZE);
+            
             res = sendUDPData(udp_socket, client_addr, duration, udp_data_size, udp_data_buffer.data());
         } else {
             used_scheme += "TCP";
@@ -115,12 +125,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    sockaddr_in tcp_server_addr;
-    tcp_server_addr.sin_family = AF_INET;
-    tcp_server_addr.sin_port = htons(SERVER_TCP_PORT);
-    inet_pton(AF_INET, SERVER_IP, &(tcp_server_addr.sin_addr));
+    sockaddr_in server_tcp_addr;
+    server_tcp_addr.sin_family = AF_INET;
+    server_tcp_addr.sin_port = htons(SERVER_TCP_PORT);
+    inet_pton(AF_INET, SERVER_IP, &(server_tcp_addr.sin_addr));
 
-    if (bind(tcp_socket, (struct sockaddr *)&tcp_server_addr, sizeof(tcp_server_addr)) == -1) {
+    if (bind(tcp_socket, (struct sockaddr *)&server_tcp_addr, sizeof(server_tcp_addr)) == -1) {
         std::cerr << "Error binding TCP socket." << std::endl;
         close(tcp_socket);
         return 1;
