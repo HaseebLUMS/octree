@@ -7,7 +7,21 @@
 
 #include "config.h"
 
+void showStats(
+    std::chrono::system_clock::time_point start, 
+    std::chrono::system_clock::time_point end,
+    int total_received_bytes) {
+    auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Time: " << elapased.count() << " milliseconds." << std::endl;
+    double mega_bits_recvd = (total_received_bytes*8)/(1024*1024);
+    double seconds = (double)elapased.count()/1000;
+    double bwd = mega_bits_recvd/seconds;
+    std::cout << "Bandwidth: " << bwd << " Mbps." << std::endl;
+    std::cout << "DID YOU REMEMBER TO INCREASE OS UDP BUFFER SIZE? (check readme.md)" << std::endl;
+}
+
 void receiveData(int socket, int total_data_to_receive) {
+    auto start = std::chrono::high_resolution_clock::now();
     char data_buffer[BUFFER_SIZE_WITH_EXTRA_ROOM];
 
     int total_received = 0;
@@ -21,8 +35,9 @@ void receiveData(int socket, int total_data_to_receive) {
 
         total_received += bytes_received;
     }
-
-    std::cout << "Received " << (100*((double)total_received/total_data_to_receive)) << " of " << total_data_to_receive << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    // showStats(start, end, total_received);
+    std::cout << "Received " << (100*((double)total_received/total_data_to_receive)) << "\% of " << total_data_to_receive << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -72,7 +87,7 @@ int main(int argc, char* argv[]) {
 
     struct timeval timeout_udp;
     timeout_udp.tv_sec = 0;
-    timeout_udp.tv_usec = 15000;
+    timeout_udp.tv_usec = UDP_SOCKET_WAIT;
     setsockopt(udp_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout_udp, sizeof(timeout_udp));
 
     if (connect(tcp_socket, (struct sockaddr *)&server_tcp_addr, sizeof(server_tcp_addr)) == -1) {
