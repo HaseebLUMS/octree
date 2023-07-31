@@ -86,9 +86,9 @@ std::tuple<nonNegotiablePartOfCompressedOctree, negotiablePartOfCompressedOctree
 
     nonNegotiablePartOfCompressedOctree non_neg_result = {
         .non_negotiable_bytes = non_negotiable_bytes,
+        .num_of_negotiable_bytes = negotiable_bytes.size(),
         .root_center = getRootCenter(octree),
         .root_side_length = (float)sqrt(octree.getVoxelSquaredSideLen(0)),
-        .num_of_negotiable_bytes = negotiable_bytes.size(),
     };
 
     negotiablePartOfCompressedOctree neg_result = {
