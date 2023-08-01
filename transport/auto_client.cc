@@ -1,44 +1,4 @@
-#include <iostream>
-#include <chrono>
-#include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-
-#include "config.h"
-
-void showStats(
-    std::chrono::system_clock::time_point start, 
-    std::chrono::system_clock::time_point end,
-    int total_received_bytes) {
-    auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "Time: " << elapased.count() << " milliseconds." << std::endl;
-    double mega_bits_recvd = (total_received_bytes*8)/(1024*1024);
-    double seconds = (double)elapased.count()/1000;
-    double bwd = mega_bits_recvd/seconds;
-    std::cout << "Bandwidth: " << bwd << " Mbps." << std::endl;
-    std::cout << "DID YOU REMEMBER TO INCREASE OS UDP BUFFER SIZE? (check readme.md)" << std::endl;
-}
-
-void receiveData(int socket, int total_data_to_receive) {
-    auto start = std::chrono::high_resolution_clock::now();
-    char data_buffer[BUFFER_SIZE_WITH_EXTRA_ROOM];
-
-    int total_received = 0;
-    while (total_received < total_data_to_receive) {
-        int bytes_received = 0;
-        bytes_received = recv(socket, data_buffer, BUFFER_SIZE_WITH_EXTRA_ROOM, 0);
-
-        if (bytes_received <= 0) {
-            break;
-        }
-
-        total_received += bytes_received;
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    // showStats(start, end, total_received);
-    std::cout << "Received " << (100*((double)total_received/total_data_to_receive)) << "\% of " << total_data_to_receive << std::endl;
-}
+#include "client.hpp"
 
 int main(int argc, char* argv[]) {
     int tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -96,27 +56,31 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    while (true) {
+    std::string transport_scheme_tcp = "TCP";
+    std::string transport_scheme_tcp_udp_part_1 = "TCP+UDP(TCP)";
+    std::string transport_scheme_tcp_udp_part_2 = "TCP+UDP(UDP)";
+    
+    int count = 100;
+    while (count--) {
         std::string message;
-        std::cout << "Enter a message to send (or 'exit' to quit): ";
-        std::getline(std::cin, message);
-
-        if (message == "exit") {
-            break;
+        if (count%2) {
+            message = "tcp";
+        } else {
+            message = "udp";
         }
+
         auto start = std::chrono::high_resolution_clock::now();
         send(tcp_socket, message.c_str(), message.size(), 0);
 
         if (message == "udp") {
-            receiveData(tcp_socket, RELIABLE_DATA_SIZE);
-            receiveData(udp_socket, UNRELIABLE_DATA_SIZE);
+            receiveData(tcp_socket, RELIABLE_DATA_SIZE, transport_scheme_tcp_udp_part_1);
+            receiveData(udp_socket, UNRELIABLE_DATA_SIZE, transport_scheme_tcp_udp_part_2);
         } else {
-            receiveData(tcp_socket, RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE);
+            receiveData(tcp_socket, RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE, transport_scheme_tcp);
         }
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "The transport took " << elapased.count() << " milliseconds." << std::endl;
     }
 
     close(udp_socket);

@@ -1,7 +1,7 @@
 const char* SERVER_IP = "127.0.0.1";
 const char* CLIENT_IP = "127.0.0.1";
 
-const int PACKET_RATE_Mbps = 250;
+const int PACKET_RATE_Mbps = 200;
 
 const int SERVER_TCP_PORT = 9999;
 const int SERVER_UDP_PORT = 8888;
@@ -16,3 +16,5 @@ const int BUFFER_SIZE_WITH_EXTRA_ROOM = BUFFER_SIZE + 100;
 
 const int RELIABLE_DATA_SIZE = 1 * 1024 * 1024;
 const int UNRELIABLE_DATA_SIZE = 2 * 1024 * 1024;
+
+const int CUSHION_IN_SLEEP_CALCULATIONS = 3; // microseconds

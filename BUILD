@@ -43,12 +43,21 @@ cc_binary(
 
 cc_binary(
     name = "server",
-    srcs = ["server.cc", "config.h"],
+    srcs = ["transport/server.cc", "transport/config.h"],
     linkopts = ["-lpthread"],
+    data = ["assets", "output"]
 )
 
 cc_binary(
-    name = "client",
-    srcs = ["client.cc", "config.h"],
+    name = "aclient",
+    srcs = ["transport/auto_client.cc", "transport/client.hpp", "transport/config.h"],
     linkopts = ["-lpthread"],
+    data = ["assets", "output"]
+)
+
+cc_binary(
+    name = "mclient",
+    srcs = ["transport/man_client.cc", "transport/client.hpp", "transport/config.h"],
+    linkopts = ["-lpthread"],
+    data = ["assets", "output"]
 )

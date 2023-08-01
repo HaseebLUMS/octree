@@ -34,23 +34,28 @@
 
 std::chrono::microseconds getInterPacketDuration(const int packet_size_in_bytes, const int packet_rate_in_Mbps) {
     const int packet_size_in_bits = packet_size_in_bytes * 8;
-    auto interval = std::chrono::microseconds(static_cast<long long>(1000000.0 * packet_size_in_bits / (packet_rate_in_Mbps*1000000)));
+    auto interval = std::chrono::microseconds(static_cast<long long>((1000000.0 * packet_size_in_bits / (packet_rate_in_Mbps*1000000)) - CUSHION_IN_SLEEP_CALCULATIONS));
     std::cout << "Sleeping duration: " << interval.count() << " microseconds" << std::endl;
     return interval;
 }
 
 int sendUDPData(int udp_socket, struct sockaddr_in client_addr, std::chrono::microseconds duration, int total_data, char* data_buffer) {
     int total_sent = 0;
+    std::chrono::microseconds total_sleep;
     while (total_sent < total_data) {
+        auto start = std::chrono::high_resolution_clock::now();
         int bytes_sent = sendto(udp_socket, data_buffer + total_sent, std::min(BUFFER_SIZE, total_data-total_sent), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
 
         if (bytes_sent == -1) {
             return 1;
         }
         total_sent += bytes_sent;
-        std::this_thread::sleep_for(duration);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapased = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
+        total_sleep = duration-elapased;
+        std::this_thread::sleep_for(total_sleep);
     }
-    std::cout << "Bytes sent: " << total_sent << std::endl;
+    // std::cout << "Bytes sent: " << total_sent  << " with total sleep " << total_sleep.count() << std::endl;
 
     return 0;
 }
@@ -65,7 +70,7 @@ int sendTCPData(int tcp_client_socket, int total_data, char* data_buffer) {
         }
         total_sent += bytes_sent;
     }
-    std::cout << "Bytes sent: " << total_sent << std::endl;
+    // std::cout << "Bytes sent: " << total_sent << std::endl;
 
     return 0;
 }
@@ -111,7 +116,7 @@ void handleTCPConnection(int tcp_client_socket, int udp_socket, struct sockaddr_
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "The transport scheme " << used_scheme << " took " << elapased.count() << " milliseconds." << std::endl;
+        // std::cout << "The transport scheme " << used_scheme << " took " << elapased.count() << " milliseconds." << std::endl;
     }
 
     close(tcp_client_socket);
