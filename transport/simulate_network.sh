@@ -3,7 +3,7 @@
 # 0 for linux, 1 for macos
 
 if [ "$1" = "0" ]; then
-    tc qdisc change dev lo root netem rate 200Mbit loss 0% delay 5ms reorder 1%
+    tc qdisc change dev lo root netem rate 200Mbit loss 0.5% delay 5ms reorder 0%
 
 elif [ "$1" = "1" ]; then
     sudo pfctl -E
