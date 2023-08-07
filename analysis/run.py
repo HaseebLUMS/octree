@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def read_file():
-    with open("run_0_1_loss.txt") as f:
+    with open("run_0_5_loss.txt") as f:
         data = f.read()
 
         data = data.split("\n")
@@ -55,12 +55,12 @@ def plot_cdfs(tcp_data_points, udp_data_points):
     plt.xlabel('Time (milliseconds)')
     plt.ylabel('CDF')
     # plt.title('Different Transport Schemes Under 0.5% Packet Loss\n(UDP Successfully Transfers >= 99.02% of data)')
-    plt.title('Different Transport Schemes Under 0.1% Packet Loss\n(UDP Successfully Transfers >= 99.65% of data)')
-    # plt.title('Different Transport Schemes Under 1% Packet Reordering')
+    # plt.title('Different Transport Schemes Under 0.1% Packet Loss\n(UDP Successfully Transfers >= 99.65% of data)')
+    plt.title('Different Transport Schemes Under 1% Packet Reordering')
     plt.legend()
 
     # Show the plot
-    plt.savefig("cdf_0_1_loss.pdf")
+    plt.savefig("cdf_1p_reorder.png")
     plt.clf()
 
 def plot_medians(tcp_data_points, udp_data_points):
