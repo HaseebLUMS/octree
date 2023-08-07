@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def read_file():
-    with open("run_0_5_loss.txt") as f:
+    with open("run_1p_reorder.txt") as f:
         data = f.read()
 
         data = data.split("\n")
