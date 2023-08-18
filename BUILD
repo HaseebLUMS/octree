@@ -42,6 +42,13 @@ cc_binary(
 )
 
 cc_binary(
+    name = "encdecmac",
+    srcs = ["main.cc", "encode.hpp", "decode.hpp", "common.h", "common.cc"],
+    deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io", "//:macjpegencdec"],
+    data = ["assets", "output"]
+)
+
+cc_binary(
     name = "server",
     srcs = ["transport/server.cc", "transport/config.h"],
     linkopts = ["-lpthread"],
