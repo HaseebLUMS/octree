@@ -66,9 +66,7 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
 // TODO: Get lost_probability out of here, not being used.
 void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors) {
     
-    std::string lp_str = std::to_string(lost_probability);
-    lp_str.erase(lp_str.find_last_not_of('0') + 1, std::string::npos);
-    std::string filename = "./output/output_lost_" + lp_str + ".ply";
+    std::string filename = "./output/test.ply";
     
     std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
