@@ -104,11 +104,15 @@ std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std:
     std::vector<uint8_t> orig_colors;
     std::vector<uint8_t> compressed_colors;
 
+    int i = 0;
     for (auto ind : points_order) {
-        const auto& p = cloud->points.at(ind);
-        orig_colors.push_back(p.r);
-        orig_colors.push_back(p.g);
-        orig_colors.push_back(p.b);
+        if (i == 0) {
+            const auto& p = cloud->points.at(ind);
+            orig_colors.push_back(p.r);
+            orig_colors.push_back(p.g);
+            orig_colors.push_back(p.b);
+        }
+        i = (i + 1) % SAMPLING_FACTOR;
     }
 
     JpegEncoder* jpeg_encoder = new JpegEncoder();

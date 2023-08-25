@@ -66,7 +66,7 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
 // TODO: Get lost_probability out of here, not being used.
 void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors) {
     
-    std::string filename = "./output/test.ply";
+    std::string filename = "./output/test_sf5.ply";
     
     std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
@@ -131,6 +131,6 @@ void showStats(nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, neg
     std::cout << "Non Negotiable Bytes: " << non_negotiable_comp_part.non_negotiable_bytes.size() << std::endl;
     std::cout << "Negotiable Bytes: " << negotiable_comp_part.negotiable_bytes.size() << std::endl;
     std::cout << "Total Geometry Bytes: " << total_bytes << std::endl;
-    std::cout << "Total Color Bytes: " << compressed_colors.size() << std::endl;
+    std::cout << "Total Color Bytes: " << compressed_colors.size() << " (" << (1.0*compressed_colors.size())/(total_bytes) << "x the geometry)" << std::endl;
     std::cout << "Negotiable share (among geometry): " << (100.0*negotiable_comp_part.negotiable_bytes.size())/total_bytes << std::endl;
 }

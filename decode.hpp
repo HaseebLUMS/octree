@@ -101,6 +101,17 @@ std::vector<Eigen::Vector4f> decompressNegotiableBytes(negotiablePartOfCompresse
     return points;
 }
 
+std::vector<Color> expandColors(std::vector<Color> decompressed_colors) {
+    std::vector<Color> expanded;
+    for (auto ele: decompressed_colors) {
+        for (int i = 0; i < SAMPLING_FACTOR; i++) {
+            expanded.push_back(ele);
+
+        }
+    }
+    return expanded;
+}
+
 std::vector<Color> decompressColors(std::vector<uint8_t> compressed_bytes) {
     std::vector<uint8_t> decoded_bytes;
     JpegDecoder* jpeg_decoder = new JpegDecoder();
@@ -113,6 +124,10 @@ std::vector<Color> decompressColors(std::vector<uint8_t> compressed_bytes) {
         c.g = decoded_bytes[3*i+1];
         c.b = decoded_bytes[3*i+2];
         decompressed_colors.push_back(c);
+    }
+    if (SAMPLING_FACTOR > 1) {
+        auto res = expandColors(decompressed_colors);
+        return res;
     }
     return decompressed_colors;
 }

@@ -21,6 +21,7 @@
 typedef pcl::PointXYZRGB PointType;
 typedef pcl::PointCloud<PointType> PointCloudType;
 typedef pcl::octree::OctreePointCloud<PointType> OctreeType;
+const int SAMPLING_FACTOR = 1;
 
 struct negotiablePartOfCompressedOctree {
     std::vector<uint8_t> negotiable_bytes;
