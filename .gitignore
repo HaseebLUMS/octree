@@ -3,4 +3,3 @@ assets/**
 output/**
 **/.DS_Store
 CMakeFiles/
-mvfst/CMakeFiles/
