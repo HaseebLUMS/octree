@@ -236,6 +236,9 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 //The directory containing a CMake configuration file for Fizz.
 Fizz_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/fizz/lib/cmake/fizz
 
+//The directory containing a CMake configuration file for Gtest::gmock.
+"Gtest::gmock_DIR":PATH=Gtest::gmock_DIR-NOTFOUND
+
 //Arguments to supply to pkg-config
 PKG_CONFIG_ARGN:STRING=
 
@@ -278,6 +281,9 @@ boost_system_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/boost-D
 //The directory containing a CMake configuration file for boost_thread.
 boost_thread_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/boost-Dtw1s_iPEivg6q0M32NYkYcZINP95NxSwuHnjQPQtO0/lib/cmake/boost_thread-1.78.0
 
+//The directory containing a CMake configuration file for fizz.
+fizz_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/fizz/lib/cmake/fizz
+
 //The directory containing a CMake configuration file for fmt.
 fmt_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/fmt-1n_KwPG76uQqPjSMZpgStKLqVAdr93KgSeWleAjPYCg/lib/cmake/fmt
 
@@ -286,6 +292,12 @@ folly_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/folly/lib/cmak
 
 //The directory containing a CMake configuration file for gflags.
 gflags_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/gflags-ygi5BlmCGHIusXr5YwR9gf2g_rIb4yaFDD8xatPNu8g/lib/cmake/gflags
+
+//The directory containing a CMake configuration file for gmock.
+gmock_DIR:PATH=gmock_DIR-NOTFOUND
+
+//The directory containing a CMake configuration file for gtest.
+gtest_DIR:PATH=/usr/local/lib/cmake/GTest
 
 //The directory containing a CMake configuration file for mvfst.
 mvfst_DIR:PATH=/Users/haseeb/Documents/GitHub/octree/mvfst/_build/mvfst/lib/cmake/mvfst

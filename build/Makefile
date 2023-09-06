@@ -117,24 +117,61 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named testing
+# Target rules for targets named hello
 
 # Build rule for target.
-testing: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 testing
-.PHONY : testing
+hello: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hello
+.PHONY : hello
 
 # fast build rule for target.
-testing/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/testing.dir/build.make CMakeFiles/testing.dir/build
-.PHONY : testing/fast
+hello/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello.dir/build.make CMakeFiles/hello.dir/build
+.PHONY : hello/fast
+
+#=============================================================================
+# Target rules for targets named echo
+
+# Build rule for target.
+echo: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 echo
+.PHONY : echo
+
+# fast build rule for target.
+echo/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/build
+.PHONY : echo/fast
+
+echo/main.o: echo/main.cpp.o
+.PHONY : echo/main.o
+
+# target to build an object file
+echo/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/echo/main.cpp.o
+.PHONY : echo/main.cpp.o
+
+echo/main.i: echo/main.cpp.i
+.PHONY : echo/main.i
+
+# target to preprocess a source file
+echo/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/echo/main.cpp.i
+.PHONY : echo/main.cpp.i
+
+echo/main.s: echo/main.cpp.s
+.PHONY : echo/main.s
+
+# target to generate assembly for a file
+echo/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/echo/main.cpp.s
+.PHONY : echo/main.cpp.s
 
 hello.o: hello.cpp.o
 .PHONY : hello.o
 
 # target to build an object file
 hello.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/testing.dir/build.make CMakeFiles/testing.dir/hello.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello.dir/build.make CMakeFiles/hello.dir/hello.cpp.o
 .PHONY : hello.cpp.o
 
 hello.i: hello.cpp.i
@@ -142,7 +179,7 @@ hello.i: hello.cpp.i
 
 # target to preprocess a source file
 hello.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/testing.dir/build.make CMakeFiles/testing.dir/hello.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello.dir/build.make CMakeFiles/hello.dir/hello.cpp.i
 .PHONY : hello.cpp.i
 
 hello.s: hello.cpp.s
@@ -150,7 +187,7 @@ hello.s: hello.cpp.s
 
 # target to generate assembly for a file
 hello.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/testing.dir/build.make CMakeFiles/testing.dir/hello.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hello.dir/build.make CMakeFiles/hello.dir/hello.cpp.s
 .PHONY : hello.cpp.s
 
 # Help Target
@@ -161,7 +198,11 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... testing"
+	@echo "... echo"
+	@echo "... hello"
+	@echo "... echo/main.o"
+	@echo "... echo/main.i"
+	@echo "... echo/main.s"
 	@echo "... hello.o"
 	@echo "... hello.i"
 	@echo "... hello.s"
