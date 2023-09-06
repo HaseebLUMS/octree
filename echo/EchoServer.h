@@ -56,7 +56,7 @@ std::shared_ptr<fizz::server::FizzServerContext> createServerCtx() {
   serverCtx->setFactory(std::make_shared<QuicFizzFactory>());
   serverCtx->setCertManager(std::move(certManager));
   serverCtx->setOmitEarlyRecordLayer(true);
-  serverCtx->setClock(std::make_shared<testing::NiceMock<fizz::test::MockClock>>());
+  // serverCtx->setClock(std::make_shared<testing::NiceMock<fizz::test::MockClock>>());
   return serverCtx;
 }
 
