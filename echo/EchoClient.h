@@ -321,7 +321,7 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
 
   void sendMessage(quic::StreamId id, BufQueue& data) {
     auto message = data.move();
-    auto res = useDatagrams_
+    auto res = useDatagrams_ && isDgTurn_
         ? quicClient_->writeDatagram(message->clone())
         : quicClient_->writeChain(id, message->clone(), true);
     if (res.hasError()) {
@@ -333,11 +333,13 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
       // sent whole message
       pendingOutput_.erase(id);
     }
+    isDgTurn_ = !isDgTurn_;
   }
 
   std::string host_;
   uint16_t port_;
   bool useDatagrams_;
+  bool isDgTurn_{false};
   uint64_t activeConnIdLimit_;
   bool enableMigration_;
   bool enableStreamGroups_;
