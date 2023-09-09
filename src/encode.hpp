@@ -32,7 +32,7 @@ void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colo
         image_height = 2048;
     }
 
-    jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
+    jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height);
 }
 
 std::tuple<nonNegotiablePartOfCompressedOctree, negotiablePartOfCompressedOctree, std::vector<int>> compressOctree(OctreeType& octree) {
@@ -117,6 +117,7 @@ std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std:
 
     JpegEncoder* jpeg_encoder = new JpegEncoder();
     jpegCompress(orig_colors, compressed_colors, jpeg_encoder);
+    std::clog << 100.0*(1.0 * compressed_colors.size()/orig_colors.size()) << std::endl;
     return compressed_colors;
 }
 

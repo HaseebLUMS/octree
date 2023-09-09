@@ -4,7 +4,7 @@
 int main() {
     pcl::PointCloud<PointType>::Ptr cloud (new pcl::PointCloud<PointType>);
     pcl::PLYReader Reader;
-    Reader.read("./assets/prettygirl.ply", *cloud);
+    Reader.read("./assets/soldier.ply", *cloud);
     std::vector<double> voxel_sizes = {1};
     for (auto vox : voxel_sizes) {
         OctreeType octree(vox);

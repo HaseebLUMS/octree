@@ -1,6 +1,11 @@
 #include "JpegEncoder.hpp"
 #include <fstream>
 #include <cstdio>
+
+#include "libs/libwebp-mac/include/webp/types.h"
+#include "libs/libwebp-mac/include/webp/encode.h"
+#include "libs/libwebp-mac/include/webp/decode.h"
+
 JpegEncoder::JpegEncoder() {
     handle_ = tjInitCompress();
 
@@ -19,22 +24,25 @@ int JpegEncoder::encode(vector<uint8_t> rgb_list, vector<uint8_t> &jpeg, int wid
 
     uint8_t* jpegBuf =NULL;
     unsigned long jpegSize;
-    int tj_stat = tjCompress2(handle_, srcBuf, width, width * nbands_, height, pixelFormat_, 
-            &(jpegBuf), &jpegSize, jpegSubsamp_, jpegQual_, flags_);
+    // int tj_stat = tjCompress2(handle_, srcBuf, width, width * nbands_, height, pixelFormat_, 
+    //         &(jpegBuf), &jpegSize, jpegSubsamp_, jpegQual_, flags_);
+
+    // std::cout << "encoding" << std::endl;
+    jpegSize = WebPEncodeRGB(srcBuf, width, height, 3 * width, 100, &jpegBuf);
 
     jpeg.resize(jpegSize, 0);
     memcpy(&jpeg[0], jpegBuf, jpegSize);
 
     FILE* qFile= fopen("./output/test_image.jpg", "wb");
     fwrite(jpegBuf, sizeof(uint8_t), jpegSize, qFile);
-    if(tj_stat != 0)
-    {   
-        const char *err = (const char *) tjGetErrorStr();
-        cerr << "TurboJPEG Error: " << err << " UNABLE TO COMPRESS JPEG IMAGE\n";
-        tjDestroy(handle_);
-        handle_ = NULL;
-        return -1;
-    }
+    // if(tj_stat != 0)
+    // {   
+    //     const char *err = (const char *) tjGetErrorStr();
+    //     cerr << "TurboJPEG Error: " << err << " UNABLE TO COMPRESS JPEG IMAGE\n";
+    //     tjDestroy(handle_);
+    //     handle_ = NULL;
+    //     return -1;
+    // }
 
     fclose(qFile);
 
