@@ -16,14 +16,9 @@ cc_library(
 cc_library(
     name = "macjpegencdec",
     srcs = [
-        "libs/JpegDecoder.cpp",
-        "libs/JpegDecoder.hpp",
-        "libs/JpegEncoder.cpp",
-        "libs/JpegEncoder.hpp",
         "libs/jpeg-turbo/2.1.5.1/lib/libturbojpeg.a",
         "libs/jpeg-turbo/2.1.5.1/include/turbojpeg.h",
     ],
-    deps = ["//:macwebp"],
     visibility = ["//main:__pkg__"],
 )
 
@@ -48,14 +43,14 @@ cc_binary(
 
 cc_binary(
     name = "encdec",
-    srcs = ["main.cc", "encode.hpp", "decode.hpp", "common.h", "common.cc"],
+    srcs = ["src/main.cc", "src/encode.hpp", "src/decode.hpp", "src/common.h", "src/common.cc", "src/colors.hpp"],
     deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io", "//:linuxjpegencdec"],
     data = ["assets", "output"]
 )
 
 cc_binary(
     name = "encdecmac",
-    srcs = ["src/main.cc", "src/encode.hpp", "src/decode.hpp", "src/common.h", "src/common.cc"],
+    srcs = ["src/main.cc", "src/encode.hpp", "src/decode.hpp", "src/common.h", "src/common.cc", "src/colors.hpp"],
     deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io", "//:macjpegencdec", "//:macwebp"],
     data = ["assets", "output"],
 )

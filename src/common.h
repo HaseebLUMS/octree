@@ -9,8 +9,7 @@
 #include <tuple>
 #include <vector>
 
-#include "libs/JpegEncoder.hpp"
-#include "libs/JpegDecoder.hpp"
+#include "colors.hpp"
 
 #include <pcl/octree/octree.h>
 #include <pcl/common/transforms.h>
