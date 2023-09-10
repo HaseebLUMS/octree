@@ -112,10 +112,9 @@ std::vector<Color> expandColors(std::vector<Color> decompressed_colors) {
     return expanded;
 }
 
-std::vector<Color> decompressColors(std::vector<uint8_t> compressed_bytes) {
+std::vector<Color> decompressColors(std::vector<uint8_t> compressed_bytes, ColorEncDec* color_enc_dec) {
     std::vector<uint8_t> decoded_bytes;
-    JpegDecoder* jpeg_decoder = new JpegDecoder();
-    jpeg_decoder->decode(compressed_bytes, decoded_bytes);
+    color_enc_dec->decode(compressed_bytes, decoded_bytes);
 
     std::vector<Color> decompressed_colors;
     for (int i = 0; i < decoded_bytes.size()/3; i++) {
@@ -125,6 +124,7 @@ std::vector<Color> decompressColors(std::vector<uint8_t> compressed_bytes) {
         c.b = decoded_bytes[3*i+2];
         decompressed_colors.push_back(c);
     }
+
     if (SAMPLING_FACTOR > 1) {
         auto res = expandColors(decompressed_colors);
         return res;

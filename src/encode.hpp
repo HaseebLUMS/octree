@@ -15,7 +15,7 @@ void get_leaves_indices(pcl::octree::OctreeNode* node, std::vector<int> &indices
     container.getPointIndices(indices);
 }
 
-void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colors, JpegEncoder* jpeg_encoder) {
+void compressImage(std::vector<uint8_t>& orig_colors, std::vector<uint8_t>& compressed_colors, ColorEncDec* color_enc_dec) {
     int image_width = 512;
     int image_height = 512;
 
@@ -32,7 +32,7 @@ void jpegCompress(vector<uint8_t>& orig_colors, vector<uint8_t>& compressed_colo
         image_height = 2048;
     }
 
-    jpeg_encoder->encode(orig_colors, compressed_colors, image_width, image_height); 
+    color_enc_dec->encode(orig_colors, compressed_colors, image_width, image_height);
 }
 
 std::tuple<nonNegotiablePartOfCompressedOctree, negotiablePartOfCompressedOctree, std::vector<int>> compressOctree(OctreeType& octree) {
@@ -100,7 +100,7 @@ std::tuple<nonNegotiablePartOfCompressedOctree, negotiablePartOfCompressedOctree
     return std::make_tuple(non_neg_result, neg_result, points_order);
 }
 
-std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order) {
+std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std::vector<int> points_order, ColorEncDec* color_enc_dec) {
     std::vector<uint8_t> orig_colors;
     std::vector<uint8_t> compressed_colors;
 
@@ -115,8 +115,7 @@ std::vector<uint8_t> compressColors(pcl::PointCloud<PointType>::Ptr& cloud, std:
         i = (i + 1) % SAMPLING_FACTOR;
     }
 
-    JpegEncoder* jpeg_encoder = new JpegEncoder();
-    jpegCompress(orig_colors, compressed_colors, jpeg_encoder);
+    compressImage(orig_colors, compressed_colors, color_enc_dec);
     return compressed_colors;
 }
 
