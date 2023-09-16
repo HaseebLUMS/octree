@@ -35,6 +35,15 @@ cc_library(
     visibility = ["//main:__pkg__"],
 )
 
+cc_library(
+    name = "macavif",
+    srcs = [
+        "libs/libavif/1.0.1/include/avif/avif.h",
+        "libs/libavif/1.0.1/lib/libavif.dylib"
+    ],
+    visibility = ["//main:__pkg__"],
+)
+
 cc_binary(
     name = "benchmark",
     srcs = ["benchmark.cc"],
@@ -51,8 +60,8 @@ cc_binary(
 cc_binary(
     name = "encdecmac",
     srcs = ["src/main.cc", "src/encode.hpp", "src/decode.hpp", "src/common.h", "src/common.cc", "src/colors.hpp"],
-    deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io", "//:macjpegencdec", "//:macwebp"],
-    data = ["assets", "output"],
+    deps = ["@pcl//:common", "@pcl//:octree", "@pcl//:io", "//:macjpegencdec", "//:macwebp", "//:macavif"],
+    data = ["assets", "output"]
 )
 
 cc_binary(
@@ -74,4 +83,10 @@ cc_binary(
     srcs = ["transport/man_client.cc", "transport/client.hpp", "transport/config.h"],
     linkopts = ["-lpthread"],
     data = ["assets", "output"]
+)
+
+cc_binary(
+    name = "hello",
+    srcs = ["src/hello.cpp"],
+    deps = ["//:macavif"]
 )

@@ -44,10 +44,10 @@ struct Color {
 
 std::vector<float> getRootCenter(OctreeType& octree);
 Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, uint8_t bit_pos);
-void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors);
+void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors);
 int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
-void showStats(nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, negotiablePartOfCompressedOctree negotiable_comp_part, std::vector<uint8_t> compressed_colors);
+void showStats(nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, negotiablePartOfCompressedOctree negotiable_comp_part, std::vector<uint8_t> compressed_colors, std::vector<std::chrono::steady_clock::time_point> time_points);
 
 #endif
