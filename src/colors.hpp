@@ -22,7 +22,9 @@ public:
 protected:
     int nbands_{3};
     int qual_{70};
-    std::string test_filename{"./output/test_image.jpg"};
+    std::string test_filename_jpg{"./output/test_image.jpg"};
+    std::string test_filename_webp{"./output/test_image.webp"};
+    std::string test_filename_avif{"./output/test_image.avif"};
 };
 
 class JpegEncDec : public ColorEncDec {
@@ -36,6 +38,7 @@ public:
     }
 
     int encode(std::vector<uint8_t>& rgb_list, std::vector<uint8_t> &output, int width, int height) {
+        std::cout << "Using Jpeg" << std::endl;
         uint8_t* src_buf = new uint8_t[width * height * nbands_];
         memset(src_buf, 0, width * height * nbands_);
         memcpy(src_buf, &rgb_list[0], rgb_list.size());
@@ -56,7 +59,7 @@ public:
         output.resize(jpeg_size, 0);
         memcpy(&output[0], jpeg_buf, jpeg_size);
 
-        FILE* qFile= fopen(test_filename.c_str(), "wb");
+        FILE* qFile= fopen(test_filename_jpg.c_str(), "wb");
         fwrite(jpeg_buf, sizeof(uint8_t), jpeg_size, qFile);
         fclose(qFile);
 
@@ -102,10 +105,7 @@ public:
     WebpEncDec() {}
 
     int encode(std::vector<uint8_t>& rgb_list, std::vector<uint8_t> &output, int width, int height) {
-        FILE* oFile= fopen("./output/orig_image.bin", "wb");
-        fwrite(rgb_list.data(), sizeof(uint8_t), rgb_list.size(), oFile);
-        fclose(oFile);
-
+        std::cout << "Using Webp" << std::endl;
         uint8_t* src_buf = new uint8_t[width * height * nbands_];
         memset(src_buf, 0, width * height * nbands_);
         memcpy(src_buf, &rgb_list[0], rgb_list.size());
@@ -123,7 +123,7 @@ public:
         output.resize(jpeg_size, 0);
         memcpy(&output[0], jpeg_buf, jpeg_size);
 
-        FILE* qFile= fopen(test_filename.c_str(), "wb");
+        FILE* qFile= fopen(test_filename_webp.c_str(), "wb");
         fwrite(jpeg_buf, sizeof(uint8_t), jpeg_size, qFile);
         fclose(qFile);
         
@@ -151,73 +151,43 @@ public:
     AvifEncDec() {}
 
     int encode(std::vector<uint8_t>& rgb_list, std::vector<uint8_t> &output, int width, int height) {
-        const char * outputFilename = "test.avif";
-
-        int returnCode = 1;
-        avifEncoder * encoder = NULL;
+        std::cout << "Using Avif" << std::endl;
         avifRWData avifOutput = AVIF_DATA_EMPTY;
         avifRGBImage rgb;
         memset(&rgb, 0, sizeof(rgb));
 
-        avifImage * image = avifImageCreate(128, 128, 8, AVIF_PIXEL_FORMAT_YUV444); // these values dictate what goes into the final AVIF
+        avifImage * image = avifImageCreate(width, height, 8, AVIF_PIXEL_FORMAT_YUV444); // these values dictate what goes into the final AVIF
         if (!image) {
             fprintf(stderr, "Out of memory\n");
             return 1;
         }
-        // Configure image here: (see avif/avif.h)
-        // * colorPrimaries
-        // * transferCharacteristics
-        // * matrixCoefficients
-        // * avifImageSetProfileICC()
-        // * avifImageSetMetadataExif()
-        // * avifImageSetMetadataXMP()
-        // * yuvRange
-        // * alphaPremultiplied
-        // * transforms (transformFlags, pasp, clap, irot, imir)
-
-        printf("Encoding from converted RGBA\n");
 
         avifRGBImageSetDefaults(&rgb, image);
-        // Override RGB(A)->YUV(A) defaults here:
-        //   depth, format, chromaDownsampling, avoidLibYUV, ignoreAlpha, alphaPremultiplied, etc.
+        rgb.rowBytes = width*3;
+        rgb.format = AVIF_RGB_FORMAT_RGB;
 
-        // Alternative: set rgb.pixels and rgb.rowBytes yourself, which should match your chosen rgb.format
-        // Be sure to use uint16_t* instead of uint8_t* for rgb.pixels/rgb.rowBytes if (rgb.depth > 8)
         avifResult allocationResult = avifRGBImageAllocatePixels(&rgb);
         if (allocationResult != AVIF_RESULT_OK) {
             fprintf(stderr, "Allocation of RGB samples failed: %s\n", avifResultToString(allocationResult));
             return 1;
         }
 
-        // Fill your RGB(A) data here
-        memset(rgb.pixels, 255, rgb.rowBytes * image->height);
-
+        memcpy(rgb.pixels, &rgb_list[0], rgb_list.size());
+        
         avifResult convertResult = avifImageRGBToYUV(image, &rgb);
         if (convertResult != AVIF_RESULT_OK) {
             fprintf(stderr, "Failed to convert to YUV(A): %s\n", avifResultToString(convertResult));
             return 1;
         }
 
-        encoder = avifEncoderCreate();
+        avifEncoder * encoder = avifEncoderCreate();
         if (!encoder) {
             fprintf(stderr, "Out of memory\n");
             return 1;
         }
-        // Configure your encoder here (see avif/avif.h):
-        // * maxThreads
-        // * quality
-        // * qualityAlpha
-        // * tileRowsLog2
-        // * tileColsLog2
-        // * speed
-        // * keyframeInterval
-        // * timescale
         encoder->quality = 70;
         encoder->qualityAlpha = AVIF_QUALITY_LOSSLESS;
 
-        // Call avifEncoderAddImage() for each image in your sequence
-        // Only set AVIF_ADD_IMAGE_FLAG_SINGLE if you're not encoding a sequence
-        // Use avifEncoderAddImageGrid() instead with an array of avifImage* to make a grid image
         avifResult addImageResult = avifEncoderAddImage(encoder, image, 1, AVIF_ADD_IMAGE_FLAG_SINGLE);
         if (addImageResult != AVIF_RESULT_OK) {
             fprintf(stderr, "Failed to add image to encoder: %s\n", avifResultToString(addImageResult));
@@ -230,21 +200,84 @@ public:
             return 1;
         }
 
+        output.resize(avifOutput.size, 0);
+        memcpy(&output[0], avifOutput.data, avifOutput.size);
         printf("Encode success: %zu total bytes\n", avifOutput.size);
+        printf("Original: %zu total bytes\n", rgb_list.size());
 
-        FILE * f = fopen(outputFilename, "wb");
+        FILE * f = fopen(test_filename_avif.c_str(), "wb");
         size_t bytesWritten = fwrite(avifOutput.data, 1, avifOutput.size, f);
         fclose(f);
         if (bytesWritten != avifOutput.size) {
             fprintf(stderr, "Failed to write %zu bytes\n", avifOutput.size);
             return 1;
         }
-        printf("Wrote: %s\n", outputFilename);
-
-        returnCode = 0;
+        return 0;
     }
 
     void decode(std::vector<uint8_t>& compressed_bytes, std::vector<uint8_t>& decoded_bytes) {
+        const char * inputFilename = test_filename_avif.c_str();
 
+        avifRGBImage rgb;
+        memset(&rgb, 0, sizeof(rgb));
+
+        avifDecoder * decoder = avifDecoderCreate();
+        // Override decoder defaults here (codecChoice, requestedSource, ignoreExif, ignoreXMP, etc)
+
+        avifResult result = avifDecoderSetIOFile(decoder, inputFilename);
+        if (result != AVIF_RESULT_OK) {
+            fprintf(stderr, "Cannot open file for read: %s\n", inputFilename);
+            exit(1);
+        }
+
+        result = avifDecoderParse(decoder);
+        if (result != AVIF_RESULT_OK) {
+            fprintf(stderr, "Failed to decode image: %s\n", avifResultToString(result));
+            exit(1);
+        }
+
+        // Now available:
+        // * All decoder->image information other than pixel data:
+        //   * width, height, depth
+        //   * transformations (pasp, clap, irot, imir)
+        //   * color profile (icc, CICP)
+        //   * metadata (Exif, XMP)
+        // * decoder->alphaPresent
+        // * number of total images in the AVIF (decoder->imageCount)
+        // * overall image sequence timing (including per-frame timing with avifDecoderNthImageTiming())
+
+        printf("Parsed AVIF: %ux%u (%ubpc)\n", decoder->image->width, decoder->image->height, decoder->image->depth);
+
+        while (avifDecoderNextImage(decoder) == AVIF_RESULT_OK) {
+            std::cout << "Image++" << std::endl;
+            // Now available (for this frame):
+            // * All decoder->image YUV pixel data (yuvFormat, yuvPlanes, yuvRange, yuvChromaSamplePosition, yuvRowBytes)
+            // * decoder->image alpha data (alphaPlane, alphaRowBytes)
+            // * this frame's sequence timing
+
+            avifRGBImageSetDefaults(&rgb, decoder->image);
+            rgb.format = AVIF_RGB_FORMAT_RGB;
+            // Override YUV(A)->RGB(A) defaults here:
+            //   depth, format, chromaUpsampling, avoidLibYUV, ignoreAlpha, alphaPremultiplied, etc.
+
+            // Alternative: set rgb.pixels and rgb.rowBytes yourself, which should match your chosen rgb.format
+            // Be sure to use uint16_t* instead of uint8_t* for rgb.pixels/rgb.rowBytes if (rgb.depth > 8)
+            result = avifRGBImageAllocatePixels(&rgb);
+            if (result != AVIF_RESULT_OK) {
+                fprintf(stderr, "Allocation of RGB samples failed: %s (%s)\n", inputFilename, avifResultToString(result));
+                exit(1);
+            }
+
+            result = avifImageYUVToRGB(decoder->image, &rgb);
+            if (result != AVIF_RESULT_OK) {
+                fprintf(stderr, "Conversion from YUV failed: %s (%s)\n", inputFilename, avifResultToString(result));
+                exit(1);
+            }
+
+            decoded_bytes.resize(rgb.width*rgb.height*3);
+            memcpy(&decoded_bytes[0], rgb.pixels, rgb.width*rgb.height*3);
+        }
+
+        return;
     }
 };

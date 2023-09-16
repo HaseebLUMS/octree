@@ -63,11 +63,8 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
     return child_center;
 }
 
-// TODO: Get lost_probability out of here, not being used.
-void writeToFile(double lost_probability, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors) {
-    
-    std::string filename = "./output/testwebp.ply";
-    
+void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors) {
+        
     std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
         outputFile << "ply" << "\n";
@@ -126,11 +123,19 @@ std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree)
     return node_counts_per_level;
 }
 
-void showStats(nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, negotiablePartOfCompressedOctree negotiable_comp_part, std::vector<uint8_t> compressed_colors) {
+void showStats(
+    nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, 
+    negotiablePartOfCompressedOctree negotiable_comp_part, 
+    std::vector<uint8_t> compressed_colors,
+    std::vector<std::chrono::steady_clock::time_point> time_points
+) {
     double total_bytes = negotiable_comp_part.negotiable_bytes.size() + non_negotiable_comp_part.non_negotiable_bytes.size();
     std::cout << "Non Negotiable Bytes: " << non_negotiable_comp_part.non_negotiable_bytes.size() << std::endl;
     std::cout << "Negotiable Bytes: " << negotiable_comp_part.negotiable_bytes.size() << std::endl;
     std::cout << "Total Geometry Bytes: " << total_bytes << std::endl;
     std::cout << "Total Color Bytes: " << compressed_colors.size() << " (" << (1.0*compressed_colors.size())/(total_bytes) << "x the geometry)" << std::endl;
     std::cout << "Negotiable share (among geometry): " << (100.0*negotiable_comp_part.negotiable_bytes.size())/total_bytes << std::endl;
+    std::cout << "Negotiable share (among all data): " << (100.0*negotiable_comp_part.negotiable_bytes.size())/(total_bytes+compressed_colors.size())<< std::endl;
+    std::cout << "Compression Time : " << std::chrono::duration_cast<std::chrono::milliseconds>(time_points[1] - time_points[0]).count() << std::endl;
+    std::cout << "Decompression Time : " << std::chrono::duration_cast<std::chrono::milliseconds>(time_points[3] - time_points[2]).count() << std::endl;
 }
