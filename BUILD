@@ -3,6 +3,39 @@ load("@rules_pcl//bzl:pcl.bzl", "pcl_config")
 pcl_config()
 
 cc_library(
+    name = "mvfst",
+    srcs = glob([
+        "libs/mvfst/_build/fizz/lib/*.a",
+
+        "libs/mvfst/_build/folly/lib/*.a",
+
+        "libs/mvfst/_build/gflags*/lib/*.a",
+        "libs/mvfst/_build/gflags*/lib/*.dylib",
+
+        "libs/mvfst/_build/googletest*/lib/*.a",
+
+        "libs/mvfst/_build/mvfst/lib/*.a",
+
+    ]),
+    hdrs = glob([
+        "libs/mvfst/_build/fizz/include/**/*.h",
+        "libs/mvfst/_build/folly/include/**/*.h",
+        "libs/mvfst/_build/gflags*/include/**/*.h",
+        "libs/mvfst/_build/googletest*/include/**/*.h",
+        "libs/mvfst/_build/mvfst/include/**/*.h",
+    ]),
+    includes = [
+        "libs/mvfst/_build/fizz/include",
+        "libs/mvfst/_build/folly/include",
+        "libs/mvfst/_build/gflags*/include",
+        "libs/mvfst/_build/googletest*/include",
+        "libs/mvfst/_build/mvfst/include"
+    ],
+    # copts = ["-Ilibs/mvfst/_build/mvfst/include/"],
+    visibility = ["//main:__pkg__"],
+)
+
+cc_library(
     name = "macwebp",
     srcs = [
         "libs/libwebp-mac/lib/libwebp.a",
@@ -88,5 +121,5 @@ cc_binary(
 cc_binary(
     name = "hello",
     srcs = ["src/hello.cpp"],
-    deps = ["//:macavif"]
+    deps = ["//:macavif", "//:mvfst"]
 )

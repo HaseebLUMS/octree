@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 
+#include <quic/QuicConstants.h>
 #include "libs/libavif/1.0.1/include/avif/avif.h"
 
 int main(int argc, char * argv[])
