@@ -5,33 +5,66 @@ pcl_config()
 cc_library(
     name = "mvfst",
     srcs = glob([
+        "libs/mvfst/_build/**/lib/*.a",
+        "libs/mvfst/_build/**/lib/*.dylib",
+        "libs/mvfst/_build/boost*/lib/*.a",
+        "libs/mvfst/_build/boost*/lib/*.a",
         "libs/mvfst/_build/fizz/lib/*.a",
-
         "libs/mvfst/_build/folly/lib/*.a",
-
         "libs/mvfst/_build/gflags*/lib/*.a",
         "libs/mvfst/_build/gflags*/lib/*.dylib",
-
         "libs/mvfst/_build/googletest*/lib/*.a",
-
+        "libs/mvfst/_build/glog*/lib/libglog.dylib",
         "libs/mvfst/_build/mvfst/lib/*.a",
 
     ]),
     hdrs = glob([
+        "libs/mvfst/_build/**/include/**/*.h",
+        "libs/mvfst/_build/**/include/**/*.hpp",
+        "libs/mvfst/_build/boost*/include/**/*.h",
+        "libs/mvfst/_build/boost*/include/**/*.hpp",
+        "libs/mvfst/_build/glog*/include/**/*.h",
+        "libs/mvfst/_build/glog*/include/**/*.hpp",
         "libs/mvfst/_build/fizz/include/**/*.h",
+        "libs/mvfst/_build/fizz/include/**/*.hpp",
         "libs/mvfst/_build/folly/include/**/*.h",
+        "libs/mvfst/_build/folly/include/**/*.hpp",
         "libs/mvfst/_build/gflags*/include/**/*.h",
+        "libs/mvfst/_build/gflags*/include/**/*.hpp",
         "libs/mvfst/_build/googletest*/include/**/*.h",
+        "libs/mvfst/_build/googletest*/include/**/*.hpp",
         "libs/mvfst/_build/mvfst/include/**/*.h",
+        "libs/mvfst/_build/mvfst/include/**/*.hpp",
     ]),
     includes = [
-        "libs/mvfst/_build/fizz/include",
+        "libs/mvfst/_build/libevent-8XghsOQRh5Rl2-V4eFu-N1X8ltAAYurshhdZ2XdoNxI/include",
+        "libs/mvfst/_build/cmake-P1QC37Ysv-5J65PwwiStTSite2s1srRwGkTq31HmvWc/include",
+        "libs/mvfst/_build/libtool-PxEUgV9OsTgFbmYMVXMLQhVVXQ1i22mxNxelq4Kd-3k/include",
+        "libs/mvfst/_build/boost-Dtw1s_iPEivg6q0M32NYkYcZINP95NxSwuHnjQPQtO0/include",
+        "libs/mvfst/_build/double-conversion-G2inL_Y9ITo-4EQxpomD7rKkt75sdqr-5lsGAPXuNoU/include",
+        "libs/mvfst/_build/lz4-p7OoE7Sm1K2LGjJQD8C7DxF1qdjT2y6ty7fM12dIEK0/include",
+        "libs/mvfst/_build/ninja-kFbokuZ-QChFpn7osI76jQDwCDjellpNOmgirR-mrt0/include",
+        "libs/mvfst/_build/fmt-1n_KwPG76uQqPjSMZpgStKLqVAdr93KgSeWleAjPYCg/include",
+        "libs/mvfst/_build/zlib-pSV5ynwzfc5kjiHuxevNIeSuJIry-n1XCzWuGJ25wDo/include",
+        "libs/mvfst/_build/snappy-4Jaz2vn7vGio6WyghWI7ZiR40PSLaq8OqhxYiluvizg/include",
+        "libs/mvfst/_build/zstd-qoaWKI2a7AFnW3390a9_UJs3vbhukvjqkNyAelSgT_k/include",
+        "libs/mvfst/_build/automake-WtyMxSMs6g_xNarv7AN9DUIx0jwP5A8y2OMTKaZRhPg/include",
+        "libs/mvfst/_build/libsodium-67aNK5kYYzO3t43uKHoQsSXMA9HyjKYFYi-bRw5Zckc/include",
+        "libs/mvfst/_build/zlib-mUL878y_rB_oh4DUwyMQ5UvqJe2-CYRGmGEt8Y6UAg4/include",
+        "libs/mvfst/_build/openssl-I4d8NgBIAtuQ1gvqG07YAMtgnvB9zguzLzavZ1kjFdI/include",
+        "libs/mvfst/_build/boost-Z5CRLdEuAKQ7y2iRHYz0Vdh33HMWbP2jb4dP_lJIeKs/include",
+        "libs/mvfst/_build/xz-2oJqcYH4nsnj8y5lqL4Bj8YZTRQ2uqxA2MTZJeeWwok/include",
+        "libs/mvfst/_build/ninja-n2yW1uxkF2fpD4HGZeSo5lBXbRrE9_hMmXl0WpUlWBk/include",
+        "libs/mvfst/_build/gflags-ygi5BlmCGHIusXr5YwR9gf2g_rIb4yaFDD8xatPNu8g/include",
+        "libs/mvfst/_build/autoconf-qbhp1glvFuK8tD7l880Eg7TA-jIMw6rQAI_KDjlP6FQ/include",
+        "libs/mvfst/_build/glog-9SNzWT-dLlysSQoRrhUM-DN6f79eVhXGeJqgi8nJnvg/include",
+        "libs/mvfst/_build/mvfst/include",
+        "libs/mvfst/_build/cmake-vSWgHu-LwmiXveabjqRx_cn5iUWD5B4IE2IRcs52zsA/include",
+        "libs/mvfst/_build/googletest-d1Yzyk2jT3VC0JGUk9VQOe9UFjKP61c2oQnzEocvt8k/include",
         "libs/mvfst/_build/folly/include",
-        "libs/mvfst/_build/gflags*/include",
-        "libs/mvfst/_build/googletest*/include",
-        "libs/mvfst/_build/mvfst/include"
+        "libs/mvfst/_build/zstd-R2zFnCNrJ21uB8qPUJAF7RfaE00txdSJenqQGPD3oSk/include",
+        "libs/mvfst/_build/fizz/include"
     ],
-    # copts = ["-Ilibs/mvfst/_build/mvfst/include/"],
     visibility = ["//main:__pkg__"],
 )
 
@@ -122,4 +155,13 @@ cc_binary(
     name = "hello",
     srcs = ["src/hello.cpp"],
     deps = ["//:macavif", "//:mvfst"]
+)
+
+cc_binary(
+    name = "echo",
+    srcs = glob([
+        "src/echo/*.h",
+        "src/echo/*.cpp"
+    ]),
+    deps = ["//:mvfst"]
 )
