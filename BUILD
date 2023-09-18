@@ -6,35 +6,11 @@ cc_library(
     name = "mvfst",
     srcs = glob([
         "libs/mvfst/_build/**/lib/*.a",
-        "libs/mvfst/_build/**/lib/*.dylib",
-        "libs/mvfst/_build/boost*/lib/*.a",
-        "libs/mvfst/_build/boost*/lib/*.a",
-        "libs/mvfst/_build/fizz/lib/*.a",
-        "libs/mvfst/_build/folly/lib/*.a",
-        "libs/mvfst/_build/gflags*/lib/*.a",
-        "libs/mvfst/_build/gflags*/lib/*.dylib",
-        "libs/mvfst/_build/googletest*/lib/*.a",
-        "libs/mvfst/_build/glog*/lib/libglog.dylib",
-        "libs/mvfst/_build/mvfst/lib/*.a",
-
+        "libs/mvfst/_build/**/lib/*.dylib"
     ]),
     hdrs = glob([
         "libs/mvfst/_build/**/include/**/*.h",
-        "libs/mvfst/_build/**/include/**/*.hpp",
-        "libs/mvfst/_build/boost*/include/**/*.h",
-        "libs/mvfst/_build/boost*/include/**/*.hpp",
-        "libs/mvfst/_build/glog*/include/**/*.h",
-        "libs/mvfst/_build/glog*/include/**/*.hpp",
-        "libs/mvfst/_build/fizz/include/**/*.h",
-        "libs/mvfst/_build/fizz/include/**/*.hpp",
-        "libs/mvfst/_build/folly/include/**/*.h",
-        "libs/mvfst/_build/folly/include/**/*.hpp",
-        "libs/mvfst/_build/gflags*/include/**/*.h",
-        "libs/mvfst/_build/gflags*/include/**/*.hpp",
-        "libs/mvfst/_build/googletest*/include/**/*.h",
-        "libs/mvfst/_build/googletest*/include/**/*.hpp",
-        "libs/mvfst/_build/mvfst/include/**/*.h",
-        "libs/mvfst/_build/mvfst/include/**/*.hpp",
+        "libs/mvfst/_build/**/include/**/*.hpp"
     ]),
     includes = [
         "libs/mvfst/_build/libevent-8XghsOQRh5Rl2-V4eFu-N1X8ltAAYurshhdZ2XdoNxI/include",
@@ -65,6 +41,7 @@ cc_library(
         "libs/mvfst/_build/zstd-R2zFnCNrJ21uB8qPUJAF7RfaE00txdSJenqQGPD3oSk/include",
         "libs/mvfst/_build/fizz/include"
     ],
+    linkopts = ["-lc++abi"],
     visibility = ["//main:__pkg__"],
 )
 
