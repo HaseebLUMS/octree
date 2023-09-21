@@ -4,3 +4,4 @@ output/**
 **/.DS_Store
 mvfst
 a.out
+cmake_build/**
