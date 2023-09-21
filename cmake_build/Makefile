@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named echo
+# Target rules for targets named quic_test
 
 # Build rule for target.
-echo: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 echo
-.PHONY : echo
+quic_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 quic_test
+.PHONY : quic_test
 
 # fast build rule for target.
-echo/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/build
-.PHONY : echo/fast
+quic_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/build
+.PHONY : quic_test/fast
 
-echo/main.o: echo/main.cpp.o
-.PHONY : echo/main.o
+quic_test/main.o: quic_test/main.cpp.o
+.PHONY : quic_test/main.o
 
 # target to build an object file
-echo/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/echo/main.cpp.o
-.PHONY : echo/main.cpp.o
+quic_test/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.o
+.PHONY : quic_test/main.cpp.o
 
-echo/main.i: echo/main.cpp.i
-.PHONY : echo/main.i
+quic_test/main.i: quic_test/main.cpp.i
+.PHONY : quic_test/main.i
 
 # target to preprocess a source file
-echo/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/echo/main.cpp.i
-.PHONY : echo/main.cpp.i
+quic_test/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.i
+.PHONY : quic_test/main.cpp.i
 
-echo/main.s: echo/main.cpp.s
-.PHONY : echo/main.s
+quic_test/main.s: quic_test/main.cpp.s
+.PHONY : quic_test/main.s
 
 # target to generate assembly for a file
-echo/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/echo.dir/build.make CMakeFiles/echo.dir/echo/main.cpp.s
-.PHONY : echo/main.cpp.s
+quic_test/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.s
+.PHONY : quic_test/main.cpp.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... echo"
-	@echo "... echo/main.o"
-	@echo "... echo/main.i"
-	@echo "... echo/main.s"
+	@echo "... quic_test"
+	@echo "... quic_test/main.o"
+	@echo "... quic_test/main.i"
+	@echo "... quic_test/main.s"
 .PHONY : help
 
 
