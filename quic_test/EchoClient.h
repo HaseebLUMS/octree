@@ -201,7 +201,6 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   }
 
   void onDatagramsAvailable() noexcept override {
-    LOG(INFO) << "In onDatagramsAvailable";
     auto res = quicClient_->readDatagrams();
     if (res.hasError()) {
       LOG(ERROR) << "EchoClient failed reading datagrams; error="
@@ -216,7 +215,13 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
                        .toStdString();
       LOG(INFO) << "Client received datagram ="
                 << dataRcvd.substr(0, 10) << " with size: " << dataRcvd.size();
+      totalDgs_.withWLock([&](auto& totalDgs) {
+        totalDgs += 1;
+      });
     }
+    totalDgs_.withRLock([&](auto& totalDgs) {
+      LOG(INFO) << "Total Dgs" << totalDgs;
+    });
   }
 
   void start(std::string token) {
@@ -326,6 +331,9 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   }
 
   void sendMessage(quic::StreamId id, BufQueue& data) {
+    totalDgs_.withWLock([&](auto& totalDgs) {
+      totalDgs = 0;
+    });
     auto message = data.move();
     auto res = useDatagrams_ && isDgTurn_
         ? quicClient_->writeDatagram(message->clone())
@@ -349,6 +357,7 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   uint64_t activeConnIdLimit_;
   bool enableMigration_;
   bool enableStreamGroups_;
+  folly::Synchronized<uint64_t> totalDgs_;
   std::shared_ptr<quic::QuicClientTransport> quicClient_;
   std::map<quic::StreamId, BufQueue> pendingOutput_;
   std::map<quic::StreamId, uint64_t> recvOffsets_;

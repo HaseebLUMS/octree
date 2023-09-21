@@ -239,6 +239,7 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
 
     size_t processed = 0;
     bool errorOccured = false;
+    int dgsSent = 0;
     while (processed < udpDataSize) {
       auto echoedData = folly::IOBuf::copyBuffer(udpDataBuffer.data() + processed, std::min(1200, udpDataSize-(int)processed));
 
@@ -249,8 +250,10 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
         return;
       }
 
+      dgsSent++;
       processed += 1200;
     }
+    LOG(INFO) << "Total Dgs Sent: " << dgsSent;
   }
 
   bool useDatagrams_;
