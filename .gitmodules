@@ -1,0 +1,3 @@
+[submodule "libs/mvfst"]
+	path = libs/mvfst
+	url = https://github.com/facebook/mvfst.git

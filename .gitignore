@@ -2,6 +2,6 @@ bazel-**
 assets/**
 output/**
 **/.DS_Store
-mvfst
+mvfst/_build
 a.out
 cmake_build/**
