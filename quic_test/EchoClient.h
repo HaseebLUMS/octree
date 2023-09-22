@@ -23,6 +23,11 @@
 #include <quic/samples/echo/LogQuicStats.h>
 #include <fizz/protocol/CertificateVerifier.h>
 
+const int RELIABLE_DATA_SIZE = 1 * 1024 * 1024;
+const int UNRELIABLE_DATA_SIZE = 2 * 1024 * 1024;
+std::string tcp_p_tcp_scheme = "TCP+TCP";
+std::string tcp_p_udp_scheme = "TCP+UDP";
+
 namespace quic::test {
 
 class TestCertificateVerifier : public fizz::CertificateVerifier {
@@ -75,6 +80,7 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
         enableStreamGroups_(enableStreamGroups) {}
 
   void readAvailable(quic::StreamId streamId) noexcept override {
+
     auto readData = quicClient_->read(streamId, 0);
     if (readData.hasError()) {
       LOG(ERROR) << "EchoClient failed read from stream=" << streamId
@@ -90,6 +96,14 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
     auto dataRecvd = copy->moveToFbString().toStdString();
     LOG(INFO) << "Client received data=" << dataRecvd.substr(0, 10)
               << " on stream=" << streamId << " with size: "<< dataRecvd.size();
+    tcpBytesRcvd_.withWLock([&](auto& tcpBytesRcvd) {
+      tcpBytesRcvd += dataRecvd.size();
+      if (tcpBytesRcvd == RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE) {
+        end_ = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
+        LOG(ERROR) << "TCP: " << elapsed.count();
+      }
+    });
   }
 
   void readAvailableWithGroup(
@@ -215,12 +229,17 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
                        .toStdString();
       LOG(INFO) << "Client received datagram ="
                 << dataRcvd.substr(0, 10) << " with size: " << dataRcvd.size();
-      totalDgs_.withWLock([&](auto& totalDgs) {
-        totalDgs += 1;
+      udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
+        udpBytesRcvd += dataRcvd.size();
       });
     }
-    totalDgs_.withRLock([&](auto& totalDgs) {
-      LOG(INFO) << "Total Dgs" << totalDgs;
+
+    udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
+      if (udpBytesRcvd == UNRELIABLE_DATA_SIZE) {
+        end_ = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
+        LOG(ERROR) << "UDP: " << elapsed.count();
+      }
     });
   }
 
@@ -289,11 +308,19 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
         return;
       }
 
+      message = transport_scheme;
+
       // create new stream for each message
       auto streamId = client->createBidirectionalStream().value();
       client->setReadCallback(streamId, this);
       pendingOutput_[streamId].append(folly::IOBuf::copyBuffer(message));
       sendMessage(streamId, pendingOutput_[streamId]);
+
+      if (transport_scheme == tcp_p_tcp_scheme) {
+        transport_scheme = tcp_p_udp_scheme;
+      } else {
+        transport_scheme = tcp_p_tcp_scheme;
+      }
     };
 
     auto sendMessageInStreamGroup = [&]() {
@@ -334,7 +361,18 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
     totalDgs_.withWLock([&](auto& totalDgs) {
       totalDgs = 0;
     });
+
+    tcpBytesRcvd_.withWLock([&](auto& tcpBytesRcvd) {
+      tcpBytesRcvd = 0;
+    });
+
+    udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
+      udpBytesRcvd = 0;
+    });
+
     auto message = data.move();
+    start_ = std::chrono::system_clock::now();
+
     auto res = useDatagrams_ && isDgTurn_
         ? quicClient_->writeDatagram(message->clone())
         : quicClient_->writeChain(id, message->clone(), true);
@@ -347,7 +385,12 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
       // sent whole message
       pendingOutput_.erase(id);
     }
-    isDgTurn_ = !isDgTurn_;
+    // isDgTurn_ = !isDgTurn_;
+    if (transport_scheme == tcp_p_tcp_scheme) {
+      transport_scheme = tcp_p_udp_scheme;
+    } else {
+      transport_scheme = tcp_p_tcp_scheme;
+    }
   }
 
   std::string host_;
@@ -358,6 +401,11 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   bool enableMigration_;
   bool enableStreamGroups_;
   folly::Synchronized<uint64_t> totalDgs_;
+  folly::Synchronized<uint64_t> tcpBytesRcvd_;
+  folly::Synchronized<uint64_t> udpBytesRcvd_;
+  std::chrono::system_clock::time_point start_;
+  std::chrono::system_clock::time_point end_;
+  std::string transport_scheme{tcp_p_tcp_scheme};
   std::shared_ptr<quic::QuicClientTransport> quicClient_;
   std::map<quic::StreamId, BufQueue> pendingOutput_;
   std::map<quic::StreamId, uint64_t> recvOffsets_;

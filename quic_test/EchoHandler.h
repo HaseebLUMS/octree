@@ -11,8 +11,8 @@
 
 #include <quic/common/BufUtil.h>
 
-const int RELIABLE_DATA_SIZE = 1 * 1024 * 1024;
-const int UNRELIABLE_DATA_SIZE = 2 * 1024 * 1024;
+// const int RELIABLE_DATA_SIZE = 1 * 1024 * 1024;
+// const int UNRELIABLE_DATA_SIZE = 2 * 1024 * 1024;
 
 namespace quic {
 namespace samples {
@@ -125,7 +125,9 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
     input_[id].first.append(std::move(data));
     input_[id].second = eof;
     if (eof) {
-      echo(id, input_[id]);
+      // echo(id, input_[id]);
+      echo(id, input_[id], RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE);
+      // echoDg();
       LOG(INFO) << "uninstalling read callback";
       sock->setReadCallback(id, nullptr);
     }
@@ -213,13 +215,12 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
   std::shared_ptr<quic::QuicSocket> sock;
 
  private:
-  void echo(quic::StreamId id, StreamData& data) {
+  void echo(quic::StreamId id, StreamData& data, int tcpDataSize=RELIABLE_DATA_SIZE) {
     LOG(INFO) << "In EchoTest" ;
     if (!data.second) {
       // only echo when eof is present
       return;
     }
-    int tcpDataSize = RELIABLE_DATA_SIZE;
     std::vector<char> tcpDataBuffer(tcpDataSize, 'T');
 
     auto echoedData = folly::IOBuf::copyBuffer(tcpDataBuffer.data(), tcpDataSize);
@@ -233,13 +234,12 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
     }
   }
 
-  void echoDg(std::vector<quic::ReadDatagram> datagrams) {
+  void echoDg(std::vector<quic::ReadDatagram> datagrams={}) {
     int udpDataSize = UNRELIABLE_DATA_SIZE;
     std::vector<char> udpDataBuffer(udpDataSize, 'U');
 
     size_t processed = 0;
     bool errorOccured = false;
-    int dgsSent = 0;
     while (processed < udpDataSize) {
       auto echoedData = folly::IOBuf::copyBuffer(udpDataBuffer.data() + processed, std::min(1200, udpDataSize-(int)processed));
 
@@ -249,11 +249,8 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
         LOG(ERROR) << "writeDatagram error=" << toString(res.error());
         return;
       }
-
-      dgsSent++;
       processed += 1200;
     }
-    LOG(INFO) << "Total Dgs Sent: " << dgsSent;
   }
 
   bool useDatagrams_;
