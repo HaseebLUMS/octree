@@ -40,6 +40,7 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
 
   void onNewBidirectionalStream(quic::StreamId id) noexcept override {
     LOG(INFO) << "Got bidirectional stream id=" << id;
+    sock->setStreamPriority(id, Priority(1, 0));
     sock->setReadCallback(id, this);
   }
 
@@ -117,17 +118,21 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
     quic::Buf data = std::move(res.value().first);
     bool eof = res.value().second;
     auto dataLen = (data ? data->computeChainDataLength() : 0);
+    auto message = (data) ? data->clone()->moveToFbString().toStdString()
+                         : std::string();
     LOG(INFO) << "Got len=" << dataLen << " eof=" << uint32_t(eof)
               << " total=" << input_[id].first.chainLength() + dataLen
               << " data="
-              << ((data) ? data->clone()->moveToFbString().toStdString()
-                         : std::string());
+              << message;
     input_[id].first.append(std::move(data));
     input_[id].second = eof;
     if (eof) {
-      // echo(id, input_[id]);
-      echo(id, input_[id], RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE);
-      // echoDg();
+      if (message == tcp_p_tcp_scheme) {
+        echo(id, input_[id], RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE);
+      } else {
+        echo(id, input_[id]);
+        echoDg();
+      }
       LOG(INFO) << "uninstalling read callback";
       sock->setReadCallback(id, nullptr);
     }

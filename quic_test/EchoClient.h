@@ -80,7 +80,6 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
         enableStreamGroups_(enableStreamGroups) {}
 
   void readAvailable(quic::StreamId streamId) noexcept override {
-
     auto readData = quicClient_->read(streamId, 0);
     if (readData.hasError()) {
       LOG(ERROR) << "EchoClient failed read from stream=" << streamId
@@ -98,10 +97,16 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
               << " on stream=" << streamId << " with size: "<< dataRecvd.size();
     tcpBytesRcvd_.withWLock([&](auto& tcpBytesRcvd) {
       tcpBytesRcvd += dataRecvd.size();
+      if (tcpBytesRcvd == RELIABLE_DATA_SIZE) {
+        end_tcp_ = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_tcp_ - start_);
+        LOG(ERROR) << "TCP+UDP(TCP): " << elapsed.count();
+      }
+
       if (tcpBytesRcvd == RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE) {
-        end_ = std::chrono::system_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
-        LOG(ERROR) << "TCP: " << elapsed.count();
+        end_tcp_ = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_tcp_ - start_);
+        LOG(ERROR) << "TCP+TCP: " << elapsed.count();
       }
     });
   }
@@ -236,9 +241,9 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
 
     udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
       if (udpBytesRcvd == UNRELIABLE_DATA_SIZE) {
-        end_ = std::chrono::system_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_);
-        LOG(ERROR) << "UDP: " << elapsed.count();
+        end_udp_ = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_udp_ - start_);
+        LOG(ERROR) << "TCP+UDP(UDP): " << elapsed.count();
       }
     });
   }
@@ -308,7 +313,7 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
         return;
       }
 
-      message = transport_scheme;
+      message = transport_scheme_;
 
       // create new stream for each message
       auto streamId = client->createBidirectionalStream().value();
@@ -316,10 +321,10 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
       pendingOutput_[streamId].append(folly::IOBuf::copyBuffer(message));
       sendMessage(streamId, pendingOutput_[streamId]);
 
-      if (transport_scheme == tcp_p_tcp_scheme) {
-        transport_scheme = tcp_p_udp_scheme;
+      if (transport_scheme_ == tcp_p_tcp_scheme) {
+        transport_scheme_ = tcp_p_udp_scheme;
       } else {
-        transport_scheme = tcp_p_tcp_scheme;
+        transport_scheme_ = tcp_p_tcp_scheme;
       }
     };
 
@@ -385,12 +390,6 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
       // sent whole message
       pendingOutput_.erase(id);
     }
-    // isDgTurn_ = !isDgTurn_;
-    if (transport_scheme == tcp_p_tcp_scheme) {
-      transport_scheme = tcp_p_udp_scheme;
-    } else {
-      transport_scheme = tcp_p_tcp_scheme;
-    }
   }
 
   std::string host_;
@@ -404,8 +403,9 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   folly::Synchronized<uint64_t> tcpBytesRcvd_;
   folly::Synchronized<uint64_t> udpBytesRcvd_;
   std::chrono::system_clock::time_point start_;
-  std::chrono::system_clock::time_point end_;
-  std::string transport_scheme{tcp_p_tcp_scheme};
+  std::chrono::system_clock::time_point end_udp_;
+  std::chrono::system_clock::time_point end_tcp_;
+  std::string transport_scheme_{tcp_p_tcp_scheme};
   std::shared_ptr<quic::QuicClientTransport> quicClient_;
   std::map<quic::StreamId, BufQueue> pendingOutput_;
   std::map<quic::StreamId, uint64_t> recvOffsets_;
