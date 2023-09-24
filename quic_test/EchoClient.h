@@ -236,7 +236,8 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
                 << dataRcvd.substr(0, 10) << " with size: " << dataRcvd.size();
       udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
         udpBytesRcvd += dataRcvd.size();
-      });
+        LOG(INFO) << "UDP Bytes " << udpBytesRcvd;
+	    });
     }
 
     udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {

@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
   gflags::SetCommandLineOptionWithMode(
       "logtostderr", "1", gflags::SET_FLAGS_DEFAULT);
   gflags::SetCommandLineOptionWithMode(
-      "minloglevel", "2", gflags::SET_FLAGS_DEFAULT);
+     "minloglevel", "2", gflags::SET_FLAGS_DEFAULT);
 #endif
   gflags::ParseCommandLineFlags(&argc, &argv, false);
   folly::Init init(&argc, &argv);
