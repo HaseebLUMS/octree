@@ -12,7 +12,7 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libs/mvfst/_build")
 find_package(fizz CONFIG REQUIRED)
 find_package(folly CONFIG REQUIRED)
 find_package(gflags CONFIG REQUIRED)
-find_package(gtest CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 find_package(mvfst REQUIRED)
 
 add_executable(quic_test quic_test/main.cpp)
@@ -34,3 +34,4 @@ target_link_libraries(
     mvfst::mvfst_server
     mvfst::mvfst_state_datagram_handler
 )
+
