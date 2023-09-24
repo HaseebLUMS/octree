@@ -10,8 +10,14 @@ set(CMAKE_MODULE_PATH
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libs/mvfst/_build")
 list(APPEND CMAKE_PREFIX_PATH "/usr/local")
 
-find_package(WebP CONFIG REQUIRED)
-find_package(libjpeg-turbo CONFIG REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_search_module(WEBP REQUIRED libwebp)
+pkg_search_module(JPEG REQUIRED libjpeg)
+
+# find_package(WebP CONFIG REQUIRED)
+# find_package(libjpeg-turbo CONFIG REQUIRED)
+
 find_package(libavif CONFIG REQUIRED)
 find_package(Eigen3 3.1.2)
 
@@ -24,9 +30,8 @@ add_executable(octree src/main.cpp src/common.cpp)
 
 target_link_libraries(
     octree
-    WebP::webp
-    libjpeg-turbo::jpeg
-    Eigen3::Eigen
+    ${WEBP_LIBRARIES}
+    ${JPEG_LIBRARIES}
     ${PCL_LIBRARIES}
     avif
 )
