@@ -117,6 +117,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named webp_test
+
+# Build rule for target.
+webp_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 webp_test
+.PHONY : webp_test
+
+# fast build rule for target.
+webp_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/build
+.PHONY : webp_test/fast
+
+#=============================================================================
 # Target rules for targets named quic_test
 
 # Build rule for target.
@@ -153,6 +166,30 @@ quic_test/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.s
 .PHONY : quic_test/main.cpp.s
 
+src/hello.o: src/hello.cpp.o
+.PHONY : src/hello.o
+
+# target to build an object file
+src/hello.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/src/hello.cpp.o
+.PHONY : src/hello.cpp.o
+
+src/hello.i: src/hello.cpp.i
+.PHONY : src/hello.i
+
+# target to preprocess a source file
+src/hello.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/src/hello.cpp.i
+.PHONY : src/hello.cpp.i
+
+src/hello.s: src/hello.cpp.s
+.PHONY : src/hello.s
+
+# target to generate assembly for a file
+src/hello.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/src/hello.cpp.s
+.PHONY : src/hello.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,9 +199,13 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... quic_test"
+	@echo "... webp_test"
 	@echo "... quic_test/main.o"
 	@echo "... quic_test/main.i"
 	@echo "... quic_test/main.s"
+	@echo "... src/hello.o"
+	@echo "... src/hello.i"
+	@echo "... src/hello.s"
 .PHONY : help
 
 

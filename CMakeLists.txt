@@ -8,6 +8,15 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH})
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libs/mvfst/_build")
+list(APPEND CMAKE_PREFIX_PATH "/usr/local")
+
+find_package(WebP CONFIG REQUIRED)
+
+add_executable(webp_test src/hello.cpp)
+target_link_libraries(
+    webp_test
+    WebP::webp
+)
 
 find_package(fizz CONFIG REQUIRED)
 find_package(folly CONFIG REQUIRED)
