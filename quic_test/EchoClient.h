@@ -236,7 +236,6 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
                 << dataRcvd.substr(0, 10) << " with size: " << dataRcvd.size();
       udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
         udpBytesRcvd += dataRcvd.size();
-        LOG(INFO) << "UDP Bytes " << udpBytesRcvd;
 	    });
     }
 
@@ -273,8 +272,8 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
       }
 
       TransportSettings settings;
-      settings.advertisedInitialBidiLocalStreamFlowControlWindow = 1024*1024; 
-      settings.advertisedInitialBidiRemoteStreamFlowControlWindow = 1024*1024; 
+      settings.advertisedInitialBidiLocalStreamFlowControlWindow = 512*1024; 
+      settings.advertisedInitialBidiRemoteStreamFlowControlWindow = 512*1024; 
       settings.datagramConfig.enabled = useDatagrams_;
       settings.datagramConfig.readBufSize = 1800;
       LOG(INFO) << "Default UDP Buffer " << settings.datagramConfig.readBufSize;
