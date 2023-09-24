@@ -272,6 +272,8 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
       }
 
       TransportSettings settings;
+      settings.advertisedInitialBidiLocalStreamFlowControlWindow = 1024*1024; 
+      settings.advertisedInitialBidiRemoteStreamFlowControlWindow = 1024*1024; 
       settings.datagramConfig.enabled = useDatagrams_;
       settings.datagramConfig.readBufSize = 1800;
       LOG(INFO) << "Default UDP Buffer " << settings.datagramConfig.readBufSize;
