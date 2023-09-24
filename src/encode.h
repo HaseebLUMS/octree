@@ -1,6 +1,6 @@
 #include "common.h"
 
-inline bool isPointCardinalityLevel(int current_level, int max_level, std::unordered_map<int, long long> node_counts_per_level) {
+bool isPointCardinalityLevel(int current_level, int max_level, std::unordered_map<int, long long> node_counts_per_level) {
     return node_counts_per_level[current_level] == node_counts_per_level[max_level];
 }
 

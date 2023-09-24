@@ -9,7 +9,7 @@
 #include <tuple>
 #include <vector>
 
-#include "colors.hpp"
+#include "colors.h"
 
 #include <pcl/octree/octree.h>
 #include <pcl/common/transforms.h>
@@ -49,5 +49,5 @@ int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);
 void showStats(nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, negotiablePartOfCompressedOctree negotiable_comp_part, std::vector<uint8_t> compressed_colors, std::vector<std::chrono::steady_clock::time_point> time_points);
-
+void test();
 #endif

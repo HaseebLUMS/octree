@@ -139,3 +139,7 @@ void showStats(
     std::cout << "Compression Time : " << std::chrono::duration_cast<std::chrono::milliseconds>(time_points[1] - time_points[0]).count() << std::endl;
     std::cout << "Decompression Time : " << std::chrono::duration_cast<std::chrono::milliseconds>(time_points[3] - time_points[2]).count() << std::endl;
 }
+
+void test() {
+    std::cout << "test" << std::endl;
+}

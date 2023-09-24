@@ -5,13 +5,11 @@
 #include <iostream>
 #include <vector>
 
-#include "libs/jpeg-turbo/2.1.5.1/include/turbojpeg.h"
-
-#include "libs/libwebp-mac/include/webp/types.h"
-#include "libs/libwebp-mac/include/webp/encode.h"
-#include "libs/libwebp-mac/include/webp/decode.h"
-
-#include "libs/libavif/1.0.1/include/avif/avif.h"
+#include <turbojpeg.h>
+#include <webp/types.h>
+#include <webp/encode.h>
+#include <webp/decode.h>
+#include <avif/avif.h>
 
 class ColorEncDec {
 public:

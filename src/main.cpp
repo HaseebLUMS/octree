@@ -1,10 +1,12 @@
-#include "encode.hpp"
-#include "decode.hpp"
+#include "common.h"
+#include "encode.h"
+#include "decode.h"
+
 
 int main() {
     pcl::PointCloud<PointType>::Ptr cloud (new pcl::PointCloud<PointType>);
     pcl::PLYReader Reader;
-    Reader.read("./assets/soldier.ply", *cloud);
+    Reader.read("./assets/ricardo.ply", *cloud);
     std::vector<double> voxel_sizes = {1};
     for (auto vox : voxel_sizes) {
         OctreeType octree(vox);
@@ -30,5 +32,6 @@ int main() {
 
         writeToFile("./output/testavif_small.ply", points, decompressed_colors);
         showStats(non_negotiable_comp_part, negotiable_comp_part, compressed_colors, {t1, t2, t3, t4});
+        test();
     }
 }

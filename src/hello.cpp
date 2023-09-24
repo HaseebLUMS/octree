@@ -1,12 +1,23 @@
 #include <iostream>
 #include <cstring>
 
-// #include "libs/libavif/1.0.1/include/avif/avif.h"
 #include <webp/encode.h>
+#include <turbojpeg.h>
+#include <avif/avif.h>
+
+#include <pcl/octree/octree.h>
+#include <pcl/common/transforms.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/io/ply_io.h>
 
 int main(int argc, char * argv[])
 {
     auto a = WebPEncode(nullptr, nullptr);
+    auto b = WebPConfigInit(nullptr);
+    auto c = TJPARAM_JPEGHEIGHT;
+    auto d = AVIF_RESULT_NOT_IMPLEMENTED;
+    std::cout << c << " " << d << std::endl;
 //     const char * outputFilename = "test.avif";
 
 //     int returnCode = 1;

@@ -117,78 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named webp_test
+# Target rules for targets named octree
 
 # Build rule for target.
-webp_test: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 webp_test
-.PHONY : webp_test
+octree: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 octree
+.PHONY : octree
 
 # fast build rule for target.
-webp_test/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/build
-.PHONY : webp_test/fast
+octree/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/build
+.PHONY : octree/fast
 
-#=============================================================================
-# Target rules for targets named quic_test
-
-# Build rule for target.
-quic_test: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 quic_test
-.PHONY : quic_test
-
-# fast build rule for target.
-quic_test/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/build
-.PHONY : quic_test/fast
-
-quic_test/main.o: quic_test/main.cpp.o
-.PHONY : quic_test/main.o
+src/main.o: src/main.cpp.o
+.PHONY : src/main.o
 
 # target to build an object file
-quic_test/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.o
-.PHONY : quic_test/main.cpp.o
+src/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/src/main.cpp.o
+.PHONY : src/main.cpp.o
 
-quic_test/main.i: quic_test/main.cpp.i
-.PHONY : quic_test/main.i
-
-# target to preprocess a source file
-quic_test/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.i
-.PHONY : quic_test/main.cpp.i
-
-quic_test/main.s: quic_test/main.cpp.s
-.PHONY : quic_test/main.s
-
-# target to generate assembly for a file
-quic_test/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.s
-.PHONY : quic_test/main.cpp.s
-
-src/hello.o: src/hello.cpp.o
-.PHONY : src/hello.o
-
-# target to build an object file
-src/hello.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/src/hello.cpp.o
-.PHONY : src/hello.cpp.o
-
-src/hello.i: src/hello.cpp.i
-.PHONY : src/hello.i
+src/main.i: src/main.cpp.i
+.PHONY : src/main.i
 
 # target to preprocess a source file
-src/hello.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/src/hello.cpp.i
-.PHONY : src/hello.cpp.i
+src/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/src/main.cpp.i
+.PHONY : src/main.cpp.i
 
-src/hello.s: src/hello.cpp.s
-.PHONY : src/hello.s
+src/main.s: src/main.cpp.s
+.PHONY : src/main.s
 
 # target to generate assembly for a file
-src/hello.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webp_test.dir/build.make CMakeFiles/webp_test.dir/src/hello.cpp.s
-.PHONY : src/hello.cpp.s
+src/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/src/main.cpp.s
+.PHONY : src/main.cpp.s
 
 # Help Target
 help:
@@ -198,14 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... quic_test"
-	@echo "... webp_test"
-	@echo "... quic_test/main.o"
-	@echo "... quic_test/main.i"
-	@echo "... quic_test/main.s"
-	@echo "... src/hello.o"
-	@echo "... src/hello.i"
-	@echo "... src/hello.s"
+	@echo "... octree"
+	@echo "... src/main.o"
+	@echo "... src/main.i"
+	@echo "... src/main.s"
 .PHONY : help
 
 
