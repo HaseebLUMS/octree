@@ -129,6 +129,67 @@ octree/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/build
 .PHONY : octree/fast
 
+#=============================================================================
+# Target rules for targets named quic_test
+
+# Build rule for target.
+quic_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 quic_test
+.PHONY : quic_test
+
+# fast build rule for target.
+quic_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/build
+.PHONY : quic_test/fast
+
+quic_test/main.o: quic_test/main.cpp.o
+.PHONY : quic_test/main.o
+
+# target to build an object file
+quic_test/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.o
+.PHONY : quic_test/main.cpp.o
+
+quic_test/main.i: quic_test/main.cpp.i
+.PHONY : quic_test/main.i
+
+# target to preprocess a source file
+quic_test/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.i
+.PHONY : quic_test/main.cpp.i
+
+quic_test/main.s: quic_test/main.cpp.s
+.PHONY : quic_test/main.s
+
+# target to generate assembly for a file
+quic_test/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/quic_test.dir/build.make CMakeFiles/quic_test.dir/quic_test/main.cpp.s
+.PHONY : quic_test/main.cpp.s
+
+src/common.o: src/common.cpp.o
+.PHONY : src/common.o
+
+# target to build an object file
+src/common.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/src/common.cpp.o
+.PHONY : src/common.cpp.o
+
+src/common.i: src/common.cpp.i
+.PHONY : src/common.i
+
+# target to preprocess a source file
+src/common.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/src/common.cpp.i
+.PHONY : src/common.cpp.i
+
+src/common.s: src/common.cpp.s
+.PHONY : src/common.s
+
+# target to generate assembly for a file
+src/common.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/octree.dir/build.make CMakeFiles/octree.dir/src/common.cpp.s
+.PHONY : src/common.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -162,6 +223,13 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... octree"
+	@echo "... quic_test"
+	@echo "... quic_test/main.o"
+	@echo "... quic_test/main.i"
+	@echo "... quic_test/main.s"
+	@echo "... src/common.o"
+	@echo "... src/common.i"
+	@echo "... src/common.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
