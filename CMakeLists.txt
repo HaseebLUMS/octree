@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(testing)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CC_STANDARD 17)
 
 set(CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
@@ -14,11 +15,11 @@ find_package(PkgConfig REQUIRED)
 
 pkg_search_module(WEBP REQUIRED libwebp)
 pkg_search_module(JPEG REQUIRED libjpeg)
+pkg_search_module(AVIF REQUIRED libavif)
 
 # find_package(WebP CONFIG REQUIRED)
 # find_package(libjpeg-turbo CONFIG REQUIRED)
 
-find_package(libavif CONFIG REQUIRED)
 find_package(Eigen3 3.1.2)
 
 find_package(PCL 1.1.0 REQUIRED)
@@ -33,7 +34,7 @@ target_link_libraries(
     ${WEBP_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${PCL_LIBRARIES}
-    avif
+    ${AVIF_LIBRARIES}
 )
 
 find_package(fizz CONFIG REQUIRED)
