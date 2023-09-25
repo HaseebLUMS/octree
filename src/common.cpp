@@ -127,7 +127,7 @@ void showStats(
     nonNegotiablePartOfCompressedOctree non_negotiable_comp_part, 
     negotiablePartOfCompressedOctree negotiable_comp_part, 
     std::vector<uint8_t> compressed_colors,
-    std::vector<std::chrono::system_clock::time_point> time_points
+    std::vector<std::chrono::high_resolution_clock::time_point> time_points
 ) {
     double total_bytes = negotiable_comp_part.negotiable_bytes.size() + non_negotiable_comp_part.non_negotiable_bytes.size();
     std::cout << "Non Negotiable Bytes: " << non_negotiable_comp_part.non_negotiable_bytes.size() << std::endl;
