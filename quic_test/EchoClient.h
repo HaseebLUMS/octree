@@ -95,21 +95,28 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
     auto dataRecvd = copy->moveToFbString().toStdString();
     LOG(INFO) << "Client received data=" << dataRecvd.substr(0, 10)
               << " on stream=" << streamId << " with size: "<< dataRecvd.size();
-    tcpBytesRcvd_.withWLock([&](auto& tcpBytesRcvd) {
-      tcpBytesRcvd += dataRecvd.size();
-      if (tcpBytesRcvd == RELIABLE_DATA_SIZE) {
-        end_tcp_ = std::chrono::system_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_tcp_ - start_);
-        LOG(ERROR) << "TCP+UDP(TCP): " << elapsed.count();
-      }
+    
+    tcpBytesRcvd_ += dataRecvd.size();
+    if (tcpBytesRcvd_ == RELIABLE_DATA_SIZE) {
+      end_tcp_ = std::chrono::system_clock::now();
+      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_tcp_ - start_);
+      LOG(ERROR) << "TCP+UDP(TCP): " << elapsed.count();
+    }
 
-      if (tcpBytesRcvd == RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE) {
-        end_tcp_ = std::chrono::system_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_tcp_ - start_);
-        LOG(ERROR) << "TCP+TCP: " << elapsed.count();
-      }
-    });
+    if (tcpBytesRcvd_ == RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE) {
+      end_tcp_ = std::chrono::system_clock::now();
+      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_tcp_ - start_);
+      LOG(ERROR) << "TCP+TCP: " << elapsed.count();
+    }
+
+    // if (false == udpCallbackScheduled_) {
+    //     quicClient_->scheduleTimeout(this, udpTimeout_);
+    // }
   }
+
+  // void timeoutExpired() noexcept override {
+  //   LOG(INFO) << "Timeout Expired";
+  // }
 
   void readAvailableWithGroup(
       quic::StreamId streamId,
@@ -234,18 +241,14 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
                        .toStdString();
       LOG(INFO) << "Client received datagram ="
                 << dataRcvd.substr(0, 10) << " with size: " << dataRcvd.size();
-      udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
-        udpBytesRcvd += dataRcvd.size();
-	    });
+      udpBytesRcvd_ += dataRcvd.size();
     }
 
-    udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
-      if (udpBytesRcvd == UNRELIABLE_DATA_SIZE) {
-        end_udp_ = std::chrono::system_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_udp_ - start_);
-        LOG(ERROR) << "TCP+UDP(UDP): " << elapsed.count();
-      }
-    });
+    if (udpBytesRcvd_ == UNRELIABLE_DATA_SIZE) {
+      end_udp_ = std::chrono::system_clock::now();
+      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_udp_ - start_);
+      LOG(ERROR) << "TCP+UDP(UDP): " << elapsed.count();
+    }
   }
 
   void start(std::string token) {
@@ -365,17 +368,9 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   }
 
   void sendMessage(quic::StreamId id, BufQueue& data) {
-    totalDgs_.withWLock([&](auto& totalDgs) {
-      totalDgs = 0;
-    });
+    tcpBytesRcvd_ = 0;
 
-    tcpBytesRcvd_.withWLock([&](auto& tcpBytesRcvd) {
-      tcpBytesRcvd = 0;
-    });
-
-    udpBytesRcvd_.withWLock([&](auto& udpBytesRcvd) {
-      udpBytesRcvd = 0;
-    });
+    udpBytesRcvd_ = 0;
 
     auto message = data.move();
     start_ = std::chrono::system_clock::now();
@@ -401,9 +396,10 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   uint64_t activeConnIdLimit_;
   bool enableMigration_;
   bool enableStreamGroups_;
-  folly::Synchronized<uint64_t> totalDgs_;
-  folly::Synchronized<uint64_t> tcpBytesRcvd_;
-  folly::Synchronized<uint64_t> udpBytesRcvd_;
+  uint64_t tcpBytesRcvd_;
+  uint64_t udpBytesRcvd_;
+  bool udpCallbackScheduled_{false};
+  std::chrono::milliseconds udpTimeout_{1};
   std::chrono::system_clock::time_point start_;
   std::chrono::system_clock::time_point end_udp_;
   std::chrono::system_clock::time_point end_tcp_;
