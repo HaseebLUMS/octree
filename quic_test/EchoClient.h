@@ -97,7 +97,7 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
               << " on stream=" << streamId << " with size: "<< dataRecvd.size();
     
     tcpBytesRcvd_ += dataRecvd.size();
-    if (tcpBytesRcvd_ == RELIABLE_DATA_SIZE) {
+    if (transport_scheme_ == tcp_p_udp_scheme && tcpBytesRcvd_ == RELIABLE_DATA_SIZE) {
       end_tcp_ = std::chrono::system_clock::now();
       auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_tcp_ - start_);
       LOG(ERROR) << "TCP+UDP(TCP): " << elapsed.count() << " 100.0";
@@ -249,11 +249,11 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
       udpBytesRcvd_ += dataRcvd.size();
     }
 
-    if (false == timeoutAlreadyTriggered_ && udpBytesRcvd_ == UNRELIABLE_DATA_SIZE) {
+    if (udpBytesRcvd_ == UNRELIABLE_DATA_SIZE) {
       cancelTimeout();
       end_udp_ = std::chrono::system_clock::now();
       auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_udp_ - start_);
-      LOG(ERROR) << "TCP+UDP(UDP): " << elapsed.count() << " 100.0";
+      LOG(ERROR) << "TCP+UDP(UDP): " << elapsed.count() << " " << (100.0*udpBytesRcvd_)/UNRELIABLE_DATA_SIZE;
     }
   }
 
@@ -416,7 +416,7 @@ class EchoClient : public quic::QuicSocket::ConnectionSetupCallback,
   uint64_t tcpBytesRcvd_;
   uint64_t udpBytesRcvd_;
   bool udpCallbackScheduled_{false};
-  std::chrono::milliseconds udpTimeout_{100};
+  std::chrono::milliseconds udpTimeout_{200};
   bool timeoutAlreadyTriggered_{false};
   std::string transport_scheme_{tcp_p_udp_scheme};
 };

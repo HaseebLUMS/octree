@@ -28,7 +28,12 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
       folly::EventBase* evbIn,
       bool useDatagrams = false,
       bool disableRtx = false)
-      : evb(evbIn), useDatagrams_(useDatagrams), disableRtx_(disableRtx) {}
+      : evb(evbIn), useDatagrams_(useDatagrams), disableRtx_(disableRtx) {
+        
+        tcpDataBuffer = std::vector<char>(RELIABLE_DATA_SIZE, 'T');
+        udpDataBuffer = std::vector<char>(UNRELIABLE_DATA_SIZE, 'U');
+        tcppudpDataBuffer = std::vector<char>(RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE, 'T');
+      }
 
   void setQuicSocket(std::shared_ptr<quic::QuicSocket> socket) {
     sock = socket;
@@ -128,10 +133,10 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
     input_[id].second = eof;
     if (eof) {
       if (message == tcp_p_tcp_scheme) {
-        echo(id, input_[id], RELIABLE_DATA_SIZE+UNRELIABLE_DATA_SIZE);
+        echo(id, input_[id], tcppudpDataBuffer);
       } else {
-        echo(id, input_[id]);
-        echoDg();
+        echo(id, input_[id], tcpDataBuffer);
+        echoDg(udpDataBuffer);
       }
       LOG(INFO) << "uninstalling read callback";
       sock->setReadCallback(id, nullptr);
@@ -170,7 +175,7 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
     streamData[id].first.append(std::move(data));
     streamData[id].second = eof;
     if (eof) {
-      echo(id, streamData[id]);
+      echo(id, streamData[id], tcpDataBuffer);
     }
   }
 
@@ -197,13 +202,13 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
       return;
     }
     LOG(INFO) << "received " << res->size() << " datagrams";
-    echoDg(std::move(res.value()));
+    echoDg(udpDataBuffer, std::move(res.value()));
   }
 
   void onStreamWriteReady(quic::StreamId id, uint64_t maxToSend) noexcept
       override {
     LOG(INFO) << "socket is write ready with maxToSend=" << maxToSend;
-    echo(id, input_[id]);
+    echo(id, input_[id], tcpDataBuffer);
   }
 
   void onStreamWriteError(quic::StreamId id, QuicError error) noexcept
@@ -220,15 +225,14 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
   std::shared_ptr<quic::QuicSocket> sock;
 
  private:
-  void echo(quic::StreamId id, StreamData& data, int tcpDataSize=RELIABLE_DATA_SIZE) {
+  void echo(quic::StreamId id, StreamData& data, std::vector<char>& dataToSend) {
     LOG(INFO) << "In EchoTest" ;
     if (!data.second) {
       // only echo when eof is present
       return;
     }
-    std::vector<char> tcpDataBuffer(tcpDataSize, 'T');
 
-    auto echoedData = folly::IOBuf::copyBuffer(tcpDataBuffer.data(), tcpDataSize);
+    auto echoedData = folly::IOBuf::copyBuffer(dataToSend.data(), dataToSend.size());
     // echoedData->prependChain(data.first.move());
     auto res = sock->writeChain(id, std::move(echoedData), true, nullptr);
     if (res.hasError()) {
@@ -239,18 +243,15 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
     }
   }
 
-  void echoDg(std::vector<quic::ReadDatagram> datagrams={}) {
-    int udpDataSize = UNRELIABLE_DATA_SIZE;
-    std::vector<char> udpDataBuffer(udpDataSize, 'U');
-
+  void echoDg(std::vector<char>& dataToSend, std::vector<quic::ReadDatagram> datagrams={}) {
     size_t processed = 0;
     bool errorOccured = false;
-    while (processed < udpDataSize) {
-      auto echoedData = folly::IOBuf::copyBuffer(udpDataBuffer.data() + processed, std::min(1200, udpDataSize-(int)processed));
+    while (processed < (int)dataToSend.size()) {
+      auto echoedData = folly::IOBuf::copyBuffer(dataToSend.data() + processed, std::min(1200, (int)dataToSend.size()-(int)processed));
 
       auto res = sock->writeDatagram(std::move(echoedData));
       if (res.hasError() && !errorOccured) {
-        LOG(ERROR) << "Error point: " << processed << " / " << udpDataSize;
+        LOG(ERROR) << "Error point: " << processed << " / " << (int)dataToSend.size();
         LOG(ERROR) << "writeDatagram error=" << toString(res.error());
         return;
       }
@@ -259,6 +260,9 @@ class EchoHandler : public quic::QuicSocket::ConnectionSetupCallback,
   }
 
   bool useDatagrams_;
+  std::vector<char> tcpDataBuffer;
+  std::vector<char> udpDataBuffer;
+  std::vector<char> tcppudpDataBuffer;
   using PerStreamData = std::map<quic::StreamId, StreamData>;
   PerStreamData input_;
   std::map<quic::StreamGroupId, PerStreamData> streamGroupsData_;

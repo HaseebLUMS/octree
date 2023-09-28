@@ -26,9 +26,7 @@ find_package(PCL 1.1.0 REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
-
 add_executable(octree src/main.cpp src/common.cpp)
-
 target_link_libraries(
     octree
     ${WEBP_LIBRARIES}
@@ -37,14 +35,15 @@ target_link_libraries(
     ${AVIF_LIBRARIES}
 )
 
+add_executable(kerenel_transport_server src/transport/server.cc)
+add_executable(kerenel_transport_man_client src/transport/man_client.cc src/transport/client.hpp)
+
 find_package(fizz CONFIG REQUIRED)
 find_package(folly CONFIG REQUIRED)
 find_package(gflags CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(mvfst REQUIRED)
-
 add_executable(quic_test quic_test/main.cpp)
-
 target_link_libraries(
     quic_test 
     fizz::fizz
