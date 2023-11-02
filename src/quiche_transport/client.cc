@@ -18,7 +18,7 @@
 
 #include <quiche.h>
 
-#include "tmp_config.h"
+#include "config.h"
 
 #define LOCAL_CONN_ID_LEN 16
 
