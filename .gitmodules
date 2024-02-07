@@ -1,3 +1,7 @@
 [submodule "libs/mvfst"]
 	path = libs/mvfst
 	url = https://github.com/facebook/mvfst.git
+
+[submodule "libs/quiche"]
+	path = libs/quiche
+	url = https://github.com/cloudflare/quiche

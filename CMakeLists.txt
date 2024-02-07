@@ -14,15 +14,11 @@ list(APPEND CMAKE_PREFIX_PATH "/usr/local")
 
 find_package(PkgConfig REQUIRED)
 
+## Octree
 pkg_search_module(WEBP REQUIRED libwebp)
 pkg_search_module(JPEG REQUIRED libjpeg)
 pkg_search_module(AVIF REQUIRED libavif)
-
-# find_package(WebP CONFIG REQUIRED)
-# find_package(libjpeg-turbo CONFIG REQUIRED)
-
 find_package(Eigen3 3.1.2)
-
 find_package(PCL 1.1.0 REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -38,6 +34,7 @@ target_link_libraries(
     ${AVIF_LIBRARIES}
 )
 
+## mvfst 
 find_package(fizz CONFIG REQUIRED)
 find_package(folly CONFIG REQUIRED)
 find_package(gflags CONFIG REQUIRED)
@@ -62,4 +59,37 @@ target_link_libraries(
     mvfst::mvfst_fizz_handshake
     mvfst::mvfst_server
     mvfst::mvfst_state_datagram_handler
+)
+
+## Quiche (Cloudflare)
+
+add_custom_target(
+    quiche_rust
+    COMMAND cd ./../libs/quiche  && cargo build --target-dir ./../../third_party_build --features ffi
+)
+
+add_executable(quiche_transport src/quiche_transport/client.cc src/quiche_transport/server.cc)
+add_executable(hello_quiche src/quiche_transport/hello.cc)
+
+add_dependencies(
+    quiche_transport
+    quiche_rust
+)
+
+find_library(LIBQUICHE
+    NAMES quiche
+    HINTS ./third_party_build/debug
+)
+
+target_include_directories(quiche_transport PUBLIC ./libs/quiche/quiche/include)
+
+target_link_libraries(
+    quiche_transport
+    ssl
+    crypto
+    ev
+    dl
+    m
+    pthread
+    ${LIBQUICHE}
 )

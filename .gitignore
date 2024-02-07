@@ -5,3 +5,4 @@ output/**
 mvfst/_build
 a.out
 build/**
+third_party_build
