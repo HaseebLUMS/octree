@@ -9,6 +9,9 @@ echo "Setting OS UDP Buffers"
 sudo sysctl -w net.core.rmem_default=26214400
 sudo sysctl -w net.core.rmem_max=26214400
 
+sudo apt-get install -y libev-dev
+sudo apt-get install -y uthash-dev
+
 echo -e "${GREEN}Adding FQ to lo${COLOR_END}"
 
 sudo tc qdisc add dev lo root fq maxrate 2gbit
