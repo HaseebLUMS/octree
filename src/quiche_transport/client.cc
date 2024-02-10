@@ -1,10 +1,36 @@
+// Copyright (C) 2018-2019, Cloudflare, Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+// IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
-
+#include <chrono>
 #include <iostream>
 
 #include <fcntl.h>
@@ -29,7 +55,9 @@ ev_timer udp_timer;
 int reliable_recvd = 0;
 int unreliable_recvd = 0;
 int total_recv = 0;
-
+int start_time = 0;
+int end_time = 0;
+int end_time_tcp = 0;
 
 struct conn_io {
     ev_timer timer;
@@ -41,6 +69,14 @@ struct conn_io {
 
     quiche_conn *conn;
 };
+
+int64_t get_current_time() {
+    auto currentTime = std::chrono::system_clock::now();
+    auto durationSinceEpoch = currentTime.time_since_epoch();
+    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(durationSinceEpoch);
+    int64_t microsecondsCount = microseconds.count();
+    return microsecondsCount;
+}
 
 // static void debug_log(const char *line, void *argp) {
 //     fprintf(stderr, "%s\n", line);
@@ -128,11 +164,11 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             continue;
         }
 
-        // fprintf(stderr, "recv %zd bytes\n", done);
         total_recv += done;
+        std::clog << "received: " << total_recv << std::endl;
     }
 
-    // fprintf(stderr, "done reading\n");
+    fprintf(stderr, "done reading\n");
 
     if (quiche_conn_is_closed(conn_io->conn)) {
         fprintf(stderr, "connection closed\n");
@@ -142,6 +178,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
     }
 
     if (quiche_conn_is_established(conn_io->conn) && !req_sent) {
+        std::clog << "sending http request" << std::endl;
         const uint8_t *app_proto;
         size_t app_proto_len;
 
@@ -182,11 +219,9 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 reliable_recvd += recv_len;
                 // printf("%.*s", (int) recv_len, buf);
 
-                // if (fin) {
-                //     if (quiche_conn_close(conn_io->conn, true, 0, NULL, 0) < 0) {
-                //         fprintf(stderr, "failed to close connection\n");
-                //     }
-                // }
+                if (fin) {
+                    end_time_tcp = get_current_time();
+                }
             }
         }
 
@@ -200,20 +235,23 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 // std::cout << "Total Dgram Bytes Received: " << recv_len << std::endl;
                 unreliable_recvd += recv_len;
                 if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
+                    end_time = get_current_time();
                     ev_timer_stop(loop, &udp_timer);
+                    ev_break(EV_A_ EVBREAK_ONE);
                 }
-                // ev_timer_start(loop, &udp_timer);
-                // printf("%.*s", (int) recv_len, buf);
+                if (start_time == 0) {
+                    start_time = get_current_time();
+                    ev_timer_start(loop, &udp_timer);
+                }
             }
         }
-
     }
 
     flush_egress(loop, conn_io);
 }
 
 static void udp_timeout_cb(EV_P_ ev_timer *w, int revents) {
-    std::cout << "(Timeout) Unreliable data received: " << (1.0*unreliable_recvd) /  UNRELIABLE_DATA_SIZE << std::endl;
+    end_time = get_current_time();
     ev_break(EV_A_ EVBREAK_ONE);
 }
 
@@ -333,6 +371,8 @@ int main(int argc, char *argv[]) {
     if (conn == NULL) {
         fprintf(stderr, "failed to create connection\n");
         return -1;
+    } else {
+        std::cout << "Connection successful" << std::endl;
     }
 
     conn_io->sock = sock;
@@ -349,7 +389,8 @@ int main(int argc, char *argv[]) {
     ev_init(&conn_io->timer, timeout_cb);
     conn_io->timer.data = conn_io;
 
-    ev_timer_init(&udp_timer, udp_timeout_cb, 1, 0.0);
+    // ev_timer_init(&udp_timer, udp_timeout_cb, ev_time() - ev_now(loop) + 1, 0.0);
+    ev_timer_init(&udp_timer, udp_timeout_cb, 0.4, 0.0);
 
     flush_egress(loop, conn_io);
 
@@ -361,8 +402,8 @@ int main(int argc, char *argv[]) {
 
     quiche_config_free(config);
 
-    std::cout << "Reliably Received: " << reliable_recvd << " " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << std::endl;
-    std::cout << "Unreliably Received: " << unreliable_recvd << " " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << std::endl;
+    std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << end_time_tcp-start_time << " us." << std::endl;
+    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << " in " << end_time-start_time << " us."<< std::endl;
     std::cout << "Total Received: " << total_recv << std::endl;
 
     return 0;
