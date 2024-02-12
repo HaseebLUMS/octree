@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 
 #include <fcntl.h>
 #include <errno.h>
@@ -69,14 +70,6 @@ struct conn_io {
 
     quiche_conn *conn;
 };
-
-int64_t get_current_time() {
-    auto currentTime = std::chrono::system_clock::now();
-    auto durationSinceEpoch = currentTime.time_since_epoch();
-    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(durationSinceEpoch);
-    int64_t microsecondsCount = microseconds.count();
-    return microsecondsCount;
-}
 
 // static void debug_log(const char *line, void *argp) {
 //     fprintf(stderr, "%s\n", line);
@@ -168,7 +161,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
         std::clog << "received: " << total_recv << std::endl;
     }
 
-    fprintf(stderr, "done reading\n");
+    std::clog << "done reading" << std::endl;
 
     if (quiche_conn_is_closed(conn_io->conn)) {
         fprintf(stderr, "connection closed\n");
@@ -279,6 +272,8 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
 }
 
 int main(int argc, char *argv[]) {
+    redirectClogToDevNull();
+
     const char *host = argv[1];
     const char *port = argv[2];
 
