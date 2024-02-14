@@ -122,15 +122,8 @@ static void debug_log(const char *line, void *argp) {
     fprintf(stderr, "%s\n", line);
 }
 
-uint64_t std_time_to_u64(const std::chrono::time_point<std::chrono::system_clock>& time) {
-    const std::chrono::time_point<std::chrono::system_clock> UNIX_EPOCH;
-
-    auto raw_time = time - UNIX_EPOCH;
-
-    auto sec = std::chrono::duration_cast<std::chrono::seconds>(raw_time).count();
-    auto nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(raw_time % std::chrono::seconds(1)).count();
-
-    return static_cast<uint64_t>(sec) * NANOS_PER_SEC + static_cast<uint64_t>(nsec);
+inline uint64_t timespec_to_nanos(timespec& ts) {
+    return (ts.tv_sec * NANOS_PER_SEC) + ts.tv_nsec;
 }
 
 ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct sockaddr * dst_addr, socklen_t dst_addr_len, timespec txtime) {
@@ -159,9 +152,17 @@ ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct
     cmsg->cmsg_type = SCM_TXTIME;
     cmsg->cmsg_len = CMSG_LEN(sizeof(uint64_t));
 
-    auto duration_since_epoch = std::chrono::seconds{txtime.tv_sec} + std::chrono::nanoseconds{txtime.tv_nsec};
-    uint64_t timestamp_ns = std_time_to_u64(std::chrono::system_clock::time_point{duration_since_epoch});
-    std::cout << "Ts: " << timestamp_ns << " " << get_current_time() << std::endl;
+    timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    uint64_t timestamp_ns = timespec_to_nanos(txtime);
+    uint64_t t2 = timespec_to_nanos(ts);
+
+    if (timestamp_ns > t2) {
+        std::cout << "Wait (us): " << (timestamp_ns - t2)/1000 << std::endl;
+    } else {
+        std::cout << "Late (us): " << (t2 - timestamp_ns)/1000 << std::endl;
+    }
 
     memcpy(CMSG_DATA(cmsg), &timestamp_ns, sizeof(uint64_t));
 
@@ -180,10 +181,8 @@ static void flush_egress(struct ev_loop *loop, struct conn_io *conn_io) {
 
     while (1) {
         quiche_send_info send_info;
-        std::cout << "pre at: " << send_info.at.tv_sec << " " << send_info.at.tv_nsec << std::endl;
         ssize_t written = quiche_conn_send(conn_io->conn, out, sizeof(out),
                                            &send_info);
-        std::cout << "post at: " << send_info.at.tv_sec << " " << send_info.at.tv_nsec << std::endl;
 
         if (written == QUICHE_ERR_DONE) {
             // fprintf(stderr, "done writing\n");
