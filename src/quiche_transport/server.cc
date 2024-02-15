@@ -123,7 +123,7 @@ static void debug_log(const char *line, void *argp) {
 }
 
 inline uint64_t timespec_to_nanos(timespec& ts) {
-    return (ts.tv_sec * NANOS_PER_SEC) + ts.tv_nsec;
+    return (ts.tv_sec * NANOS_PER_SEC) + (ts.tv_nsec);
 }
 
 ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct sockaddr * dst_addr, socklen_t dst_addr_len, timespec txtime) {
@@ -159,12 +159,12 @@ ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct
     uint64_t t2 = timespec_to_nanos(ts);
 
     if (timestamp_ns > t2) {
-        std::cout << "Wait (us): " << (timestamp_ns - t2)/1000 << std::endl;
+        std::cout << " Wait (us): " << (timestamp_ns - t2)/1000 << std::endl;
     } else {
-        std::cout << "Late (us): " << (t2 - timestamp_ns)/1000 << std::endl;
+        std::cout << " Late (us): " << (t2 - timestamp_ns)/1000 << std::endl;
     }
 
-    memcpy(CMSG_DATA(cmsg), &timestamp_ns, sizeof(uint64_t));
+    memcpy(CMSG_DATA(cmsg), &t2, sizeof(uint64_t));
 
     // Send the message with control information
     ssize_t bytes_sent = sendmsg(sock, &msg, 0);
@@ -497,13 +497,14 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 }
 
                 auto msg = "init";
-                if (strncmp((char *)buf, "udp", 3)) {
+
+                if (strncmp((char *)buf, "udp", 3) == 0) {
                     msg = "udp";
-                } else if (strncmp((char *)buf, "tcp", 3)) {
+                } else if (strncmp((char *)buf, "tcp", 3) == 0) {
                     msg = "tcp";
                 }
 
-                msg = "udp";
+                std::cout << msg << std::endl;
 
                 if (fin) {
                     reliable_resp = "byez\n";

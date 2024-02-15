@@ -180,7 +180,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
         fprintf(stderr, "connection established: %.*s\n",
                 (int) app_proto_len, app_proto);
 
-        const static uint8_t r[] = "GET /index.html\r\n";
+        const static uint8_t r[] = "udp /index.html\r\n";
         if (quiche_conn_stream_send(conn_io->conn, 4, r, sizeof(r), true) < 0) {
             fprintf(stderr, "failed to send HTTP request\n");
             return;
@@ -397,9 +397,9 @@ int main(int argc, char *argv[]) {
 
     quiche_config_free(config);
 
-    std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << end_time_tcp-start_time << " us." << std::endl;
-    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << " in " << end_time-start_time << " us."<< std::endl;
-    std::cout << "Total Received: " << total_recv << std::endl;
+    std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
+    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
+    std::cout << "Total Received: " << (total_recv)/(1024*1024) << " MBs" << std::endl;
 
     return 0;
 }
