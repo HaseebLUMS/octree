@@ -13,13 +13,17 @@ int main() {
         octree.defineBoundingBox();
         octree.addPointsFromInputCloud();
 
-
         // Compression
         auto t1 = std::chrono::high_resolution_clock::now();
         WebpEncDec* color_enc = new WebpEncDec();
         auto [non_negotiable_comp_part, negotiable_comp_part, points_order] = compressOctree(octree);
         auto compressed_colors = compressColors(cloud, points_order, color_enc);
         auto t2 = std::chrono::high_resolution_clock::now();
+
+        /**
+         * Following items need to be sent to the receiver so that a volumetric frame may be constructed:
+         * non_negotiable_comp_part, negotiable_comp_part, compressed_colors
+        */
 
         // Decompression
         auto t3 = std::chrono::high_resolution_clock::now();

@@ -584,13 +584,6 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
 
 static void setsockopt_txtime(int sock)
 {
-    // Method from https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/net/sockets/txtime/src/main.c
-    // bool optval = true;
-	// if (setsockopt(sock, SOL_SOCKET, SO_TXTIME, &optval, sizeof(optval))) {
-    //     perror("setsockopt txtime (0)");
-    // }
-
-    // Method from https://unix.stackexchange.com/questions/718661/after-enabling-etf-qdisc-packets-are-only-sent-for-a-few-seconds
     struct sock_txtime so_txtime_val = { .clockid = CLOCK_MONOTONIC, .flags = 0 };
     so_txtime_val.flags = (SOF_TXTIME_REPORT_ERRORS);
 
@@ -656,10 +649,10 @@ int main(int argc, char *argv[]) {
     quiche_config_set_max_idle_timeout(config, 5000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 50000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
+    quiche_config_set_initial_max_data(config, 10000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 1000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 1000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 1000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
     quiche_config_verify_peer(config, false);

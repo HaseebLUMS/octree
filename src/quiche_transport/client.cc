@@ -316,10 +316,10 @@ int main(int argc, char *argv[]) {
     quiche_config_set_max_idle_timeout(config, 5000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 50000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
+    quiche_config_set_initial_max_data(config, 1000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 1000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 1000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 1000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_set_disable_active_migration(config, true);
