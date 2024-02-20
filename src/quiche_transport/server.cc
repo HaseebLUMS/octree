@@ -164,7 +164,7 @@ ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct
         std::cout << " Late (us): " << (t2 - timestamp_ns)/1000 << std::endl;
     }
 
-    memcpy(CMSG_DATA(cmsg), &t2, sizeof(uint64_t));
+    memcpy(CMSG_DATA(cmsg), &timestamp_ns, sizeof(uint64_t));
 
     // Send the message with control information
     ssize_t bytes_sent = sendmsg(sock, &msg, 0);
