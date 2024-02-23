@@ -1,5 +1,6 @@
 bazel-**
 assets/**
+!assets/ricardo.ply
 output/**
 **/.DS_Store
 mvfst/_build
