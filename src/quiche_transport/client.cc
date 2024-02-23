@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
 
     quiche_config_set_application_protos(config,
         (uint8_t *) "\x0ahq-interop\x05hq-29\x05hq-28\x05hq-27\x08http/0.9", 38);
-    
+
     quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
     quiche_config_set_initial_congestion_window_packets(config, 10);
     quiche_config_set_max_idle_timeout(config, 5000);
