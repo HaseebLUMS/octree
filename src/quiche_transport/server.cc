@@ -291,6 +291,8 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
     conn_io->sock = conns->sock;
     conn_io->conn = conn;
 
+    quiche_conn_set_qlog_path(conn, "./qlog_server.log", "QLOG Server", "");
+
     memcpy(&conn_io->peer_addr, peer_addr, peer_addr_len);
     conn_io->peer_addr_len = peer_addr_len;
 

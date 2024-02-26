@@ -380,6 +380,7 @@ int main(int argc, char *argv[]) {
 
     conn_io->sock = sock;
     conn_io->conn = conn;
+    quiche_conn_set_qlog_path(conn, "./qlog_client.log", "QLOG Client", "");
 
     ev_io watcher;
 
