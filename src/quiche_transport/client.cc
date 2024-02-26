@@ -40,6 +40,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <map>
 
 #include <ev.h>
 
@@ -59,6 +60,8 @@ int total_recv = 0;
 int start_time = 0;
 int end_time = 0;
 int end_time_tcp = 0;
+
+std::map<int, int> udp_data_log;
 
 struct conn_io {
     ev_timer timer;
@@ -114,6 +117,11 @@ static void flush_egress(struct ev_loop *loop, struct conn_io *conn_io) {
     double t = quiche_conn_timeout_as_nanos(conn_io->conn) / 1e9f;
     conn_io->timer.repeat = t;
     ev_timer_again(loop, &conn_io->timer);
+}
+
+static void udp_timeout_cb(EV_P_ ev_timer *w, int revents) {
+    end_time = get_current_time();
+    ev_break(EV_A_ EVBREAK_ONE);
 }
 
 static void recv_cb(EV_P_ ev_io *w, int revents) {
@@ -208,12 +216,18 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                     break;
                 }
 
+                if (start_time == 0) {
+                    start_time = get_current_time();
+                }
+
                 // std::cout << "Total Stream Bytes Received: " << recv_len << std::endl;
                 reliable_recvd += recv_len;
                 // printf("%.*s", (int) recv_len, buf);
 
                 if (fin) {
                     end_time_tcp = get_current_time();
+                    ev_timer_init(&udp_timer, udp_timeout_cb, 0.005, 0.0);
+                    ev_timer_start(loop, &udp_timer);
                 }
             }
         }
@@ -225,27 +239,21 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             if (recv_len < 0) {
                 break;
             } else {
-                // std::cout << "Total Dgram Bytes Received: " << recv_len << std::endl;
                 unreliable_recvd += recv_len;
+                if (udp_data_log[unreliable_recvd] == 0) {
+                    udp_data_log[unreliable_recvd] = get_current_time();
+                }
+
                 if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
                     end_time = get_current_time();
                     ev_timer_stop(loop, &udp_timer);
                     ev_break(EV_A_ EVBREAK_ONE);
-                }
-                if (start_time == 0) {
-                    start_time = get_current_time();
-                    ev_timer_start(loop, &udp_timer);
                 }
             }
         }
     }
 
     flush_egress(loop, conn_io);
-}
-
-static void udp_timeout_cb(EV_P_ ev_timer *w, int revents) {
-    end_time = get_current_time();
-    ev_break(EV_A_ EVBREAK_ONE);
 }
 
 static void timeout_cb(EV_P_ ev_timer *w, int revents) {
@@ -316,10 +324,10 @@ int main(int argc, char *argv[]) {
     quiche_config_set_max_idle_timeout(config, 5000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 1000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 1000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 1000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 1000000);
+    quiche_config_set_initial_max_data(config, 5000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_set_disable_active_migration(config, true);
@@ -384,8 +392,7 @@ int main(int argc, char *argv[]) {
     ev_init(&conn_io->timer, timeout_cb);
     conn_io->timer.data = conn_io;
 
-    // ev_timer_init(&udp_timer, udp_timeout_cb, ev_time() - ev_now(loop) + 1, 0.0);
-    ev_timer_init(&udp_timer, udp_timeout_cb, 0.4, 0.0);
+    // ev_timer_init(&udp_timer, udp_timeout_cb, 0.4, 0.0);
 
     flush_egress(loop, conn_io);
 
@@ -397,9 +404,13 @@ int main(int argc, char *argv[]) {
 
     quiche_config_free(config);
 
+    for (auto [k, v] : udp_data_log) {
+        std::cout << k << " " << (v - start_time)/1000 << std::endl;
+    }
+
     std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
-    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
-    std::cout << "Total Received: " << (total_recv)/(1024*1024) << " MBs" << std::endl;
+    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
+    std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
 
     return 0;
 }

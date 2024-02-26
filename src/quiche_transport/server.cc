@@ -57,7 +57,7 @@
 #define LOCAL_CONN_ID_LEN 16
 
 #define MAX_DATAGRAM_SIZE 1350
-#define MAX_PKT_SIZE 1200 // Used for sending unreliable datagrams
+#define MAX_PKT_SIZE 1300 // Used for sending unreliable datagrams
 
 constexpr uint64_t NANOS_PER_SEC = 1'000'000'000;
 
@@ -127,7 +127,6 @@ inline uint64_t timespec_to_nanos(timespec& ts) {
 }
 
 ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct sockaddr * dst_addr, socklen_t dst_addr_len, timespec txtime) {
-    // return sendto(sock, out, len, flags, dst_addr, dst_addr_len);
     struct iovec iov[1];
     iov[0].iov_base = out;
     iov[0].iov_len = len;
@@ -152,17 +151,7 @@ ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct
     cmsg->cmsg_type = SCM_TXTIME;
     cmsg->cmsg_len = CMSG_LEN(sizeof(uint64_t));
 
-    timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-
     uint64_t timestamp_ns = timespec_to_nanos(txtime);
-    uint64_t t2 = timespec_to_nanos(ts);
-
-    if (timestamp_ns > t2) {
-        std::cout << " Wait (us): " << (timestamp_ns - t2)/1000 << std::endl;
-    } else {
-        std::cout << " Late (us): " << (t2 - timestamp_ns)/1000 << std::endl;
-    }
 
     memcpy(CMSG_DATA(cmsg), &timestamp_ns, sizeof(uint64_t));
 
@@ -542,8 +531,8 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             quiche_conn_stats(conn_io->conn, &stats);
             quiche_conn_path_stats(conn_io->conn, 0, &path_stats);
 
-            fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu\n",
-                    stats.recv, stats.sent, stats.lost, path_stats.rtt, path_stats.cwnd);
+            fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu retransmitted=%zu\n",
+                    stats.recv, stats.sent, stats.lost, path_stats.rtt, path_stats.cwnd, stats.retrans);
 
             HASH_DELETE(hh, conns->h, conn_io);
 
@@ -569,8 +558,8 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
         quiche_conn_stats(conn_io->conn, &stats);
         quiche_conn_path_stats(conn_io->conn, 0, &path_stats);
         std::cout << "Total flushed: " << total_flushed << std::endl;
-        fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu\n",
-                stats.recv, stats.sent, stats.lost, path_stats.rtt, path_stats.cwnd);
+        fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu retransmitted=%zu rate=%zu\n",
+                stats.recv, stats.sent, path_stats.lost, path_stats.rtt, path_stats.cwnd, path_stats.retrans, path_stats.delivery_rate);
 
         HASH_DELETE(hh, conns->h, conn_io);
 
@@ -649,10 +638,10 @@ int main(int argc, char *argv[]) {
     quiche_config_set_max_idle_timeout(config, 5000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 10000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 1000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 1000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 1000000);
+    quiche_config_set_initial_max_data(config, 50000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
     quiche_config_verify_peer(config, false);
