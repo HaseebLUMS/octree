@@ -319,21 +319,24 @@ int main(int argc, char *argv[]) {
     quiche_config_set_application_protos(config,
         (uint8_t *) "\x0ahq-interop\x05hq-29\x05hq-28\x05hq-27\x08http/0.9", 38);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+
     quiche_config_set_initial_congestion_window_packets(config, 10);
     quiche_config_set_max_idle_timeout(config, 5000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 5000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
+    quiche_config_set_initial_max_data(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 500000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 500000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_set_disable_active_migration(config, true);
-    quiche_config_enable_dgram(config, true, 5000, 5000);
+    quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_verify_peer(config, false);
     quiche_config_enable_pacing(config, true);
+
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    // quiche_config_enable_hystart(config, true);
 
     if (getenv("SSLKEYLOGFILE")) {
       quiche_config_log_keys(config);
@@ -380,7 +383,7 @@ int main(int argc, char *argv[]) {
 
     conn_io->sock = sock;
     conn_io->conn = conn;
-    quiche_conn_set_qlog_path(conn, "./qlog_client.log", "QLOG Client", "");
+    quiche_conn_set_qlog_path(conn, "./qlog_client.qlog", "QLOG Client", "");
 
     ev_io watcher;
 

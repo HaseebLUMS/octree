@@ -291,7 +291,7 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
     conn_io->sock = conns->sock;
     conn_io->conn = conn;
 
-    quiche_conn_set_qlog_path(conn, "./qlog_server.log", "QLOG Server", "");
+    quiche_conn_set_qlog_path(conn, "./qlog_server.qlog", "QLOG Server", "");
 
     memcpy(&conn_io->peer_addr, peer_addr, peer_addr_len);
     conn_io->peer_addr_len = peer_addr_len;
@@ -640,15 +640,18 @@ int main(int argc, char *argv[]) {
     quiche_config_set_max_idle_timeout(config, 5000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 50000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
+    quiche_config_set_initial_max_data(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 500000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 500000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_verify_peer(config, false);
-    quiche_config_enable_dgram(config, true, 5000, 5000);
+    quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_enable_pacing(config, true);
+
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    // quiche_config_enable_hystart(config, true);
 
     struct connections c;
     c.sock = sock;
