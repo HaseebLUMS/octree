@@ -629,9 +629,7 @@ int main(int argc, char *argv[]) {
     }
 
     auto a = quiche_config_load_cert_chain_from_pem_file(config, "./cert.crt");
-    std::clog << "cert: " << a << std::endl; 
     auto b = quiche_config_load_priv_key_from_pem_file(config, "./cert.key");
-    std::clog << "cert: " << b << std::endl; 
 
     quiche_config_set_application_protos(config,
         (uint8_t *) "\x0ahq-interop\x05hq-29\x05hq-28\x05hq-27\x08http/0.9", 38);
