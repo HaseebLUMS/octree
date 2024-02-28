@@ -13,6 +13,16 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libs/mvfst/_build")
 list(APPEND CMAKE_PREFIX_PATH "/usr/local")
 
 find_package(PkgConfig REQUIRED)
+include(FetchContent)
+
+## ReaderWriterQueue
+FetchContent_Declare(
+  readerwriterqueue
+  GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue
+  GIT_TAG           master
+)
+
+FetchContent_MakeAvailable(readerwriterqueue)
 
 ## Octree
 pkg_search_module(WEBP REQUIRED libwebp)
@@ -39,6 +49,7 @@ target_link_libraries(
     ${PCL_LIBRARIES}
     ${AVIF_LIBRARIES}
     ${TURBOJPEG_LIBRARIES}
+    readerwriterqueue
 )
 
 ## Quiche (Cloudflare)
