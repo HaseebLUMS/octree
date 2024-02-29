@@ -455,8 +455,6 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
         if (done < 0) {
             fprintf(stderr, "failed to process packet: %zd\n", done);
             continue;
-        } else {
-            std::clog << "successfully processed a packet" << std::endl;
         }
 
         // fprintf(stderr, "recv %zd bytes\n", done);
@@ -549,8 +547,6 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
     struct conn_io *conn_io = (struct conn_io *)w->data;
     quiche_conn_on_timeout(conn_io->conn);
 
-    fprintf(stderr, "timeout\n");
-
     flush_egress(loop, conn_io);
 
     if (quiche_conn_is_closed(conn_io->conn)) {
@@ -585,8 +581,6 @@ static void setsockopt_txtime(int sock)
 }
 
 int main(int argc, char *argv[]) {
-    redirectClogToDevNull();
-
     const char *host = argv[1];
     const char *port = argv[2];
 
@@ -648,7 +642,7 @@ int main(int argc, char *argv[]) {
     quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
     // quiche_config_enable_hystart(config, true);
 
     struct connections c;

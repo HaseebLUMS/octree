@@ -166,10 +166,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
         }
 
         total_recv += done;
-        std::clog << "received: " << total_recv << std::endl;
     }
-
-    std::clog << "done reading" << std::endl;
 
     if (quiche_conn_is_closed(conn_io->conn)) {
         fprintf(stderr, "connection closed\n");
@@ -179,7 +176,6 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
     }
 
     if (quiche_conn_is_established(conn_io->conn) && !req_sent) {
-        std::clog << "sending http request" << std::endl;
         const uint8_t *app_proto;
         size_t app_proto_len;
 
@@ -280,8 +276,6 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
 }
 
 int main(int argc, char *argv[]) {
-    redirectClogToDevNull();
-
     const char *host = argv[1];
     const char *port = argv[2];
 
@@ -335,7 +329,7 @@ int main(int argc, char *argv[]) {
     quiche_config_verify_peer(config, false);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
     // quiche_config_enable_hystart(config, true);
 
     if (getenv("SSLKEYLOGFILE")) {
