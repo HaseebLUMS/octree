@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
     quiche_config_verify_peer(config, false);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_RENO);
     // quiche_config_enable_hystart(config, true);
 
     if (getenv("SSLKEYLOGFILE")) {
