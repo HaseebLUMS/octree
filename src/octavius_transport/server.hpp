@@ -26,6 +26,12 @@
 #define MAX_DATAGRAM_SIZE 1350
 #define MAX_PKT_SIZE 1300 // Used for sending unreliable datagrams
 
+#define MAX_TOKEN_LEN \
+    sizeof("quiche") - 1 + \
+    sizeof(struct sockaddr_storage) + \
+    QUICHE_MAX_CONN_ID_LEN
+
+
 constexpr uint64_t NANOS_PER_SEC = 1'000'000'000;
 
 struct connections {
@@ -52,6 +58,7 @@ public:
     std::string address;
     int port;
     connections *conns;
+    quiche_config *config;
 
     server(std::string address, int port): address(address), port(port) {}
 
@@ -62,7 +69,16 @@ public:
 private:
     void configure_quiche_server();
     void setsockopt_txtime(int sock);
-    void server::recv_cb(EV_P_ ev_io *w, int revents);
+    void recv_cb(EV_P_ ev_io *w, int revents);
+
+    static void cb(EV_P_ ev_io *w, int revents) {
+        server* s = static_cast<server*>(w->data);
+        s->recv_cb(loop, w, revents);
+    }
+
+    struct conn_io *create_conn(
+        uint8_t *scid, size_t scid_len, uint8_t *odcid, size_t odcid_len, struct sockaddr *local_addr,
+        socklen_t local_addr_len, struct sockaddr_storage *peer_addr, socklen_t peer_addr_len);
 };
 
 int server::send_frame() {
@@ -125,7 +141,7 @@ void server::configure_quiche_server() {
 
     this->setsockopt_txtime(sock);
 
-    auto config = quiche_config_new(QUICHE_PROTOCOL_VERSION);
+    this->config = quiche_config_new(QUICHE_PROTOCOL_VERSION);
     if (config == NULL) {
         fprintf(stderr, "failed to create config\n");
         exit(1);
@@ -165,9 +181,9 @@ void server::configure_quiche_server() {
 
     struct ev_loop *loop = ev_default_loop(0);
 
-    ev_io_init(&watcher, recv_cb, sock, EV_READ);
+    ev_io_init(&watcher, cb, sock, EV_READ);
     ev_io_start(loop, &watcher);
-    watcher.data = &c;
+    watcher.data = this;
 
     ev_loop(loop, 0);
 
@@ -294,7 +310,7 @@ void server::recv_cb(EV_P_ ev_io *w, int revents) {
                 continue;
             }
 
-            conn_io = create_conn(dcid, dcid_len, odcid, odcid_len,
+            conn_io = this->create_conn(dcid, dcid_len, odcid, odcid_len,
                                   conns->local_addr, conns->local_addr_len,
                                   &peer_addr, peer_addr_len);
 
@@ -324,10 +340,13 @@ void server::recv_cb(EV_P_ ev_io *w, int revents) {
             uint64_t ws = 0;
             quiche_stream_iter *writable = quiche_conn_writable(conn_io->conn);
             while (quiche_stream_iter_next(writable, &ws)) {
-                if (processed < reliable_resp.size()) {
-                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, ws, (uint8_t *) reliable_resp.data()+processed, reliable_resp.size()-processed, true);
-                    processed += bytes_sent;
-                }
+                /**
+                 * TODO(haseeb)
+                */
+                // if (processed < reliable_resp.size()) {
+                //     auto bytes_sent = quiche_conn_stream_send(conn_io->conn, ws, (uint8_t *) reliable_resp.data()+processed, reliable_resp.size()-processed, true);
+                //     processed += bytes_sent;
+                // }
             }
             quiche_stream_iter_free(writable);
 
@@ -357,24 +376,24 @@ void server::recv_cb(EV_P_ ev_io *w, int revents) {
                 std::cout << msg << std::endl;
 
                 if (fin) {
-                    reliable_resp = "byez\n";
-                    std::string unreliable_resp = "";
-                    if (strncmp((char *)msg, "tcp", 3) == 0) {
-                        std::cout << "Sending Only Reliable Data" << std::endl;
-                        reliable_resp = (std::string)tcp_data_buffer.data() + (std::string)udp_data_buffer.data();
-                        unreliable_resp = "";
-                    } else if (strncmp((char *)msg, "udp", 3) == 0) {
-                        std::cout << "Sending Both Reliable (" << tcp_data_buffer.size() << ") & Unreliable Data (" << udp_data_buffer.size() << ")" << std::endl;
-                        reliable_resp = (std::string)tcp_data_buffer.data();
-                        unreliable_resp = (std::string)udp_data_buffer.data();
-                    }
+                    // reliable_resp = "byez\n";
+                    // std::string unreliable_resp = "";
+                    // if (strncmp((char *)msg, "tcp", 3) == 0) {
+                    //     std::cout << "Sending Only Reliable Data" << std::endl;
+                    //     reliable_resp = (std::string)tcp_data_buffer.data() + (std::string)udp_data_buffer.data();
+                    //     unreliable_resp = "";
+                    // } else if (strncmp((char *)msg, "udp", 3) == 0) {
+                    //     std::cout << "Sending Both Reliable (" << tcp_data_buffer.size() << ") & Unreliable Data (" << udp_data_buffer.size() << ")" << std::endl;
+                    //     reliable_resp = (std::string)tcp_data_buffer.data();
+                    //     unreliable_resp = (std::string)udp_data_buffer.data();
+                    // }
 
-                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) reliable_resp.data(), reliable_resp.size(), true);
-                    processed = bytes_sent;
+                    // auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) reliable_resp.data(), reliable_resp.size(), true);
+                    // processed = bytes_sent;
 
-                    if (unreliable_resp.size() > 1) {
-                        make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) unreliable_resp.data(), unreliable_resp.size());
-                    }
+                    // if (unreliable_resp.size() > 1) {
+                    //     make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) unreliable_resp.data(), unreliable_resp.size());
+                    // }
                 }
             }
 
@@ -401,5 +420,160 @@ void server::recv_cb(EV_P_ ev_io *w, int revents) {
             quiche_conn_free(conn_io->conn);
             free(conn_io);
         }
+    }
+}
+
+static void mint_token(const uint8_t *dcid, size_t dcid_len,
+                       struct sockaddr_storage *addr, socklen_t addr_len,
+                       uint8_t *token, size_t *token_len) {
+    memcpy(token, "quiche", sizeof("quiche") - 1);
+    memcpy(token + sizeof("quiche") - 1, addr, addr_len);
+    memcpy(token + sizeof("quiche") - 1 + addr_len, dcid, dcid_len);
+
+    *token_len = sizeof("quiche") - 1 + addr_len + dcid_len;
+}
+
+static uint8_t *gen_cid(uint8_t *cid, size_t cid_len) {
+    int rng = open("/dev/urandom", O_RDONLY);
+
+    if (rng < 0) {
+        perror("failed to open /dev/urandom");
+        return NULL;
+    }
+
+    ssize_t rand_len = read(rng, cid, cid_len);
+    if (rand_len < 0) {
+        perror("failed to create connection ID");
+        return NULL;
+    }
+
+    return cid;
+}
+
+static bool validate_token(const uint8_t *token, size_t token_len,
+                           struct sockaddr_storage *addr, socklen_t addr_len,
+                           uint8_t *odcid, size_t *odcid_len) {
+    if ((token_len < sizeof("quiche") - 1) ||
+         memcmp(token, "quiche", sizeof("quiche") - 1)) {
+        return false;
+    }
+
+    token += sizeof("quiche") - 1;
+    token_len -= sizeof("quiche") - 1;
+
+    if ((token_len < addr_len) || memcmp(token, addr, addr_len)) {
+        return false;
+    }
+
+    token += addr_len;
+    token_len -= addr_len;
+
+    if (*odcid_len < token_len) {
+        return false;
+    }
+
+    memcpy(odcid, token, token_len);
+    *odcid_len = token_len;
+
+    return true;
+}
+
+struct conn_io* server::create_conn(
+    uint8_t *scid, size_t scid_len, uint8_t *odcid, size_t odcid_len, struct sockaddr *local_addr,
+    socklen_t local_addr_len, struct sockaddr_storage *peer_addr, socklen_t peer_addr_len) {
+    struct conn_io *conn_io = (struct conn_io *)calloc(1, sizeof(*conn_io));
+    if (conn_io == NULL) {
+        fprintf(stderr, "failed to allocate connection IO\n");
+        return NULL;
+    }
+
+    if (scid_len != LOCAL_CONN_ID_LEN) {
+        fprintf(stderr, "failed, scid length too short\n");
+    }
+
+    memcpy(conn_io->cid, scid, LOCAL_CONN_ID_LEN);
+
+    quiche_conn *conn = quiche_accept(
+        conn_io->cid, LOCAL_CONN_ID_LEN, odcid, odcid_len,
+        local_addr, local_addr_len, (struct sockaddr *) peer_addr, peer_addr_len, this->config);
+
+    if (conn == NULL) {
+        fprintf(stderr, "failed to create connection\n");
+        return NULL;
+    }
+
+    conn_io->sock = conns->sock;
+    conn_io->conn = conn;
+
+    quiche_conn_set_qlog_path(conn, "./qlog_server.qlog", "QLOG Server", "");
+
+    memcpy(&conn_io->peer_addr, peer_addr, peer_addr_len);
+    conn_io->peer_addr_len = peer_addr_len;
+
+    ev_init(&conn_io->timer, timeout_cb);
+    conn_io->timer.data = conn_io;
+
+    HASH_ADD(hh, conns->h, cid, LOCAL_CONN_ID_LEN, conn_io);
+
+    fprintf(stderr, "new connection\n");
+
+    return conn_io;
+}
+
+static void flush_egress(struct ev_loop *loop, struct conn_io *conn_io) {
+    static uint8_t out[MAX_DATAGRAM_SIZE];
+
+    while (1) {
+        quiche_send_info send_info;
+        ssize_t written = quiche_conn_send(conn_io->conn, out, sizeof(out),
+                                           &send_info);
+
+        if (written == QUICHE_ERR_DONE) {
+            // fprintf(stderr, "done writing\n");
+            break;
+        }
+
+        if (written < 0) {
+            fprintf(stderr, "failed to create packet: %zd\n", written);
+            return;
+        }
+
+        ssize_t sent = send_using_txtime(conn_io->sock, out, written, 0,
+                              (struct sockaddr *) &send_info.to,
+                              send_info.to_len, send_info.at);
+
+        if (sent != written) {
+            perror("failed to send");
+            return;
+        }
+    }
+
+    double t = quiche_conn_timeout_as_nanos(conn_io->conn) / 1e9f;
+    conn_io->timer.repeat = t;
+    ev_timer_again(loop, &conn_io->timer);
+}
+
+static void timeout_cb(EV_P_ ev_timer *w, int revents) {
+    struct conn_io *conn_io = (struct conn_io *)w->data;
+    quiche_conn_on_timeout(conn_io->conn);
+
+    flush_egress(loop, conn_io);
+
+    if (quiche_conn_is_closed(conn_io->conn)) {
+        quiche_stats stats;
+        quiche_path_stats path_stats;
+
+        quiche_conn_stats(conn_io->conn, &stats);
+        quiche_conn_path_stats(conn_io->conn, 0, &path_stats);
+        fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu retransmitted=%zu rate=%zu\n",
+                stats.recv, stats.sent, path_stats.lost, path_stats.rtt, path_stats.cwnd, path_stats.retrans, path_stats.delivery_rate);
+
+        HASH_DELETE(hh, conns->h, conn_io);
+
+        ev_timer_stop(loop, &conn_io->timer);
+        quiche_conn_free(conn_io->conn);
+        free(conn_io);
+
+        return;
     }
 }
