@@ -6,7 +6,11 @@ GREEN='\033[0;32m'
 COLOR_END='\033[0m'
 
 echo "Setting OS UDP Buffers"
+
 sudo sysctl -w net.core.rmem_default=26214400
+sudo sysctl -w net.core.wmem_default=26214400
+
+sudo sysctl -w net.core.wmem_max=26214400
 sudo sysctl -w net.core.rmem_max=26214400
 
 sudo apt-get install -y libev-dev uthash-dev libavif-dev libpcl-dev libturbojpeg0-dev libturbojpeg

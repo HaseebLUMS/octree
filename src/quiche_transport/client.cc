@@ -243,7 +243,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
                     end_time = get_current_time();
                     ev_timer_stop(loop, &udp_timer);
-                    ev_break(EV_A_ EVBREAK_ONE);
+                    // ev_break(EV_A_ EVBREAK_ONE);
                 }
             }
         }
