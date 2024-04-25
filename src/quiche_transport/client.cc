@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
 
     conn_io->sock = sock;
     conn_io->conn = conn;
-    quiche_conn_set_qlog_path(conn, "./qlog_client.qlog", "QLOG Client", "");
+    // quiche_conn_set_qlog_path(conn, "./qlog_client.qlog", "QLOG Client", "");
 
     ev_io watcher;
 
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
     // }
 
     std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
-    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
+    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/(UNRELIABLE_DATA_SIZE ?: 1)) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
     std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
 
     return 0;

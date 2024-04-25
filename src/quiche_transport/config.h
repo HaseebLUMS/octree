@@ -1,5 +1,5 @@
-const int RELIABLE_DATA_SIZE = 99 * 1024 * 1024;
-const int UNRELIABLE_DATA_SIZE = 1 * 1024 * 1024;
+const int RELIABLE_DATA_SIZE = 100 * 1024 * 1024;
+const int UNRELIABLE_DATA_SIZE = 0 * 1024 * 1024;
 
 void redirectClogToDevNull() {
     static std::ofstream devNull("/dev/null");

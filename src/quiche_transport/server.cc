@@ -291,7 +291,7 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
     conn_io->sock = conns->sock;
     conn_io->conn = conn;
 
-    quiche_conn_set_qlog_path(conn, "./qlog_server.qlog", "QLOG Server", "");
+    // quiche_conn_set_qlog_path(conn, "./qlog_server.qlog", "QLOG Server", "");
 
     memcpy(&conn_io->peer_addr, peer_addr, peer_addr_len);
     conn_io->peer_addr_len = peer_addr_len;
@@ -313,7 +313,6 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
 
     int udp_data_size = UNRELIABLE_DATA_SIZE;
     std::vector<char> udp_data_buffer(udp_data_size, 'U');
-    udp_data_buffer[udp_data_size-1] = 'C';
 
     struct conn_io *tmp, *conn_io = NULL;
 
@@ -505,13 +504,13 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                     } else if (strncmp((char *)msg, "udp", 3) == 0) {
                         std::cout << "Sending Both Reliable (" << tcp_data_buffer.size() << ") & Unreliable Data (" << udp_data_buffer.size() << ")" << std::endl;
                         reliable_resp = (std::string)tcp_data_buffer.data();
-                        unreliable_resp = (std::string)udp_data_buffer.data();
+                        if (udp_data_buffer.size()) unreliable_resp = (std::string)udp_data_buffer.data();
                     }
 
                     auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) reliable_resp.data(), reliable_resp.size(), true);
                     processed = bytes_sent;
 
-                    if (unreliable_resp.size() > 1) {
+                    if (unreliable_resp.size() > 1 && UNRELIABLE_DATA_SIZE) {
                         make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) unreliable_resp.data(), unreliable_resp.size());
                     }
                 }
