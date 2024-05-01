@@ -212,13 +212,11 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                     break;
                 }
 
-                if (start_time == 0) {
-                    start_time = get_current_time();
-                }
+                if (start_time == 0) start_time = get_current_time();
 
-                // std::cout << "Total Stream Bytes Received: " << recv_len << std::endl;
                 reliable_recvd += recv_len;
-                // printf("%.*s", (int) recv_len, buf);
+                // for (int i = 0; i < (int) std::min(static_cast<int>(recv_len), 5); i++) std::cout << buf[i] << " ";
+                // std::cout << std::endl;
 
                 if (fin) {
                     end_time_tcp = get_current_time();
@@ -235,6 +233,8 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             if (recv_len < 0) {
                 break;
             } else {
+                // for (int i = 0; i < (int) std::min(static_cast<int>(recv_len), 5); i++) std::cout << buf[i] << " ";
+                // std::cout << std::endl;
                 unreliable_recvd += recv_len;
                 if (udp_data_log[unreliable_recvd] == 0) {
                     udp_data_log[unreliable_recvd] = get_current_time();
@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
     quiche_config_verify_peer(config, false);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_RENO);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
     // quiche_config_enable_hystart(config, true);
 
     if (getenv("SSLKEYLOGFILE")) {
@@ -407,8 +407,9 @@ int main(int argc, char *argv[]) {
     // }
 
     std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
-    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/(UNRELIABLE_DATA_SIZE ?: 1)) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
-    std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
+    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/(UNRELIABLE_DATA_SIZE ? UNRELIABLE_DATA_SIZE : 1)) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
 
+    std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
+    std::cout << "Total Received (\% out of expected): " << 100 * (1.0 * reliable_recvd + unreliable_recvd)/(RELIABLE_DATA_SIZE + UNRELIABLE_DATA_SIZE) << std::endl;
     return 0;
 }

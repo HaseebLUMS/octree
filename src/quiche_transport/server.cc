@@ -62,9 +62,12 @@
 constexpr uint64_t NANOS_PER_SEC = 1'000'000'000;
 
 int total_flushed = 0;
-std::string reliable_resp = "";
 int processed = 0;
 
+struct frames_data {
+    std::vector<char> tcp_frames;
+    std::vector<char> udp_frames;
+};
 
 void make_chunks_and_send_as_dgrams(quiche_conn *conn, const uint8_t *buf, size_t buf_len) {
     int total_sent = 0;
@@ -307,12 +310,9 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
 }
 
 static void recv_cb(EV_P_ ev_io *w, int revents) {
-
-    int tcp_data_size = RELIABLE_DATA_SIZE;
-    std::vector<char> tcp_data_buffer(tcp_data_size, 'T');
-
-    int udp_data_size = UNRELIABLE_DATA_SIZE;
-    std::vector<char> udp_data_buffer(udp_data_size, 'U');
+    frames_data* data = static_cast<frames_data*>(w->data);
+    std::vector<char>* tcp_data_buffer = &data->tcp_frames;
+    std::vector<char>* udp_data_buffer = &data->udp_frames;
 
     struct conn_io *tmp, *conn_io = NULL;
 
@@ -461,12 +461,23 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
         if (quiche_conn_is_established(conn_io->conn)) {
             uint64_t ws = 0;
             quiche_stream_iter *writable = quiche_conn_writable(conn_io->conn);
+
             while (quiche_stream_iter_next(writable, &ws)) {
-                if (processed < reliable_resp.size()) {
-                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, ws, (uint8_t *) reliable_resp.data()+processed, reliable_resp.size()-processed, true);
+                if (processed && processed < tcp_data_buffer->size()) {
+                    auto bytes_sent = quiche_conn_stream_send(
+                        conn_io->conn, ws,
+                        (uint8_t *) (tcp_data_buffer->data() + processed),
+                        tcp_data_buffer->size() - processed, true);
+                    
+                    if (bytes_sent < 0) {
+                        std::cout << "Problem!" << std::endl;
+                        exit(1);
+                    }
+
                     processed += bytes_sent;
                 }
             }
+
             quiche_stream_iter_free(writable);
 
             uint64_t s = 0;
@@ -495,23 +506,15 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 std::cout << msg << std::endl;
 
                 if (fin) {
-                    reliable_resp = "byez\n";
-                    std::string unreliable_resp = "";
-                    if (strncmp((char *)msg, "tcp", 3) == 0) {
-                        std::cout << "Sending Only Reliable Data" << std::endl;
-                        reliable_resp = (std::string)tcp_data_buffer.data() + (std::string)udp_data_buffer.data();
-                        unreliable_resp = "";
-                    } else if (strncmp((char *)msg, "udp", 3) == 0) {
-                        std::cout << "Sending Both Reliable (" << tcp_data_buffer.size() << ") & Unreliable Data (" << udp_data_buffer.size() << ")" << std::endl;
-                        reliable_resp = (std::string)tcp_data_buffer.data();
-                        if (udp_data_buffer.size()) unreliable_resp = (std::string)udp_data_buffer.data();
-                    }
+                    std::cout << "Sending Both Reliable (" << tcp_data_buffer->size() 
+                        << ") & Unreliable Data (" << udp_data_buffer->size() << ")" << std::endl;
 
-                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) reliable_resp.data(), reliable_resp.size(), true);
+                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) tcp_data_buffer->data(), tcp_data_buffer->size(), true);
+                    std::cout << "Reliably sent: " << bytes_sent << std::endl;
                     processed = bytes_sent;
 
-                    if (unreliable_resp.size() > 1 && UNRELIABLE_DATA_SIZE) {
-                        make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) unreliable_resp.data(), unreliable_resp.size());
+                    if (udp_data_buffer->size() > 1 && UNRELIABLE_DATA_SIZE) {
+                        make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) udp_data_buffer->data(), udp_data_buffer->size());
                     }
                 }
             }
@@ -641,8 +644,21 @@ int main(int argc, char *argv[]) {
     quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_RENO);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
     // quiche_config_enable_hystart(config, true);
+
+    ////////////// TEST DATA  //////////////
+    int tcp_data_size = RELIABLE_DATA_SIZE;
+    std::vector<char> tcp_data_buffer(tcp_data_size, 'U');
+
+    int udp_data_size = UNRELIABLE_DATA_SIZE;
+    std::vector<char> udp_data_buffer(udp_data_size, 'U');
+
+    frames_data data = {
+        .tcp_frames = tcp_data_buffer,
+        .udp_frames = udp_data_buffer,
+    };
+    ////////////// TEST DATA END  //////////////
 
     struct connections c;
     c.sock = sock;
@@ -658,7 +674,7 @@ int main(int argc, char *argv[]) {
 
     ev_io_init(&watcher, recv_cb, sock, EV_READ);
     ev_io_start(loop, &watcher);
-    watcher.data = &c;
+    watcher.data = &data;
 
     ev_loop(loop, 0);
 
