@@ -48,6 +48,7 @@
 #include <quiche.h>
 
 #include "config.h"
+#include "utils.h"
 
 #define LOCAL_CONN_ID_LEN 16
 
@@ -80,12 +81,17 @@ struct conn_io {
 };
 
 void log_frames(const char * pkt, const int pkt_len, const int t) {
+    int b = 0;
     for (int i = 0; i < pkt_len; i++) {
-        if (i+1 < pkt_len && pkt[i] == pkt[i+1]) continue;
+        b++;
+        if (i+1 < pkt_len && pkt[i] == pkt[i+1]) {
+            continue;
+        }
 
         const char& c = pkt[i];
-        bytes_received_per_frame[c]++;
+        bytes_received_per_frame[c] += b;
         frame_time[c] = t;
+        b = 0;
     }
 }
 
@@ -399,8 +405,6 @@ int main(int argc, char *argv[]) {
     ev_init(&conn_io->timer, timeout_cb);
     conn_io->timer.data = conn_io;
 
-    // ev_timer_init(&udp_timer, udp_timeout_cb, 0.4, 0.0);
-
     flush_egress(loop, conn_io);
 
     ev_loop(loop, 0);
@@ -416,5 +420,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
     std::cout << "Total Received (\% out of expected): " << 100 * (1.0 * reliable_recvd + unreliable_recvd)/(RELIABLE_DATA_SIZE + UNRELIABLE_DATA_SIZE) << std::endl;
+    
+    export_logs(bytes_received_per_frame, frame_time, LOGS_LOCATION, start_time);
     return 0;
 }

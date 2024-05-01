@@ -1,6 +1,8 @@
 const int RELIABLE_DATA_SIZE = 50 * 1024 * 1024;
 const int UNRELIABLE_DATA_SIZE = 50 * 1024 * 1024;
 
+const char* LOGS_LOCATION = "./../benchmark_results";  // assuming ./ is the build directory
+
 void redirectClogToDevNull() {
     static std::ofstream devNull("/dev/null");
     std::clog.rdbuf(devNull.rdbuf());

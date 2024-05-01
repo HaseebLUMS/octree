@@ -72,7 +72,7 @@ struct frames_data {
 void make_chunks_and_send_as_dgrams(quiche_conn *conn, const uint8_t *buf, size_t buf_len) {
     int total_sent = 0;
     while (total_sent < buf_len) {
-        auto bytes_sent = quiche_conn_dgram_send(conn, (uint8_t *) buf, std::min((unsigned long)MAX_PKT_SIZE, buf_len-total_sent));
+        auto bytes_sent = quiche_conn_dgram_send(conn, (uint8_t *) (buf + total_sent), std::min((unsigned long)MAX_PKT_SIZE, buf_len-total_sent));
 
         if (bytes_sent == -1) {
             std::cerr << "Could not send dgrams" << std::endl;
@@ -649,7 +649,7 @@ int main(int argc, char *argv[]) {
 
     ////////////// TEST DATA  //////////////
     char frame_start = 'A';
-    int frame_size = 2 * 1024 * 1024;  // 2Mega
+    const int frame_size = 2 * 1024 * 1024;  // 2Mega
 
     int tcp_data_size = RELIABLE_DATA_SIZE;
     std::vector<char> tcp_data_buffer(tcp_data_size, 'T');
