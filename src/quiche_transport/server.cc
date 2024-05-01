@@ -648,11 +648,38 @@ int main(int argc, char *argv[]) {
     // quiche_config_enable_hystart(config, true);
 
     ////////////// TEST DATA  //////////////
+    char frame_start = 'A';
+    int frame_size = 2 * 1024 * 1024;  // 2Mega
+
     int tcp_data_size = RELIABLE_DATA_SIZE;
-    std::vector<char> tcp_data_buffer(tcp_data_size, 'U');
+    std::vector<char> tcp_data_buffer(tcp_data_size, 'T');
+
+    int i = 0;
+    while (i < tcp_data_size) {
+        tcp_data_buffer[i] = frame_start;
+        i++;
+        if (i % frame_size == 0) {
+            frame_start++;
+            std::cout << frame_start << " " << std::flush;
+        }
+    }
+
+    std::cout << std::endl;
 
     int udp_data_size = UNRELIABLE_DATA_SIZE;
     std::vector<char> udp_data_buffer(udp_data_size, 'U');
+
+    i = 0;
+    while (i < udp_data_size) {
+        udp_data_buffer[i] = frame_start;
+        i++;
+        if (i % frame_size == 0) {
+            frame_start++;
+            std::cout << frame_start << " " << std::flush;
+        }
+    }
+
+    std::cout << std::endl;
 
     frames_data data = {
         .tcp_frames = tcp_data_buffer,

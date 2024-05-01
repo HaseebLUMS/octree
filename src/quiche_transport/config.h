@@ -6,6 +6,7 @@ void redirectClogToDevNull() {
     std::clog.rdbuf(devNull.rdbuf());
 }
 
+// In microseconds
 int64_t get_current_time() {
     auto currentTime = std::chrono::system_clock::now();
     auto durationSinceEpoch = currentTime.time_since_epoch();

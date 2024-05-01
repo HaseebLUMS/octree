@@ -41,6 +41,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <map>
+#include <unordered_map>
 
 #include <ev.h>
 
@@ -61,7 +62,11 @@ int start_time = 0;
 int end_time = 0;
 int end_time_tcp = 0;
 
-std::map<int, int> udp_data_log;
+// {frame1: x} means x bytes for frame1 have been received
+std::unordered_map<char, int> bytes_received_per_frame;
+
+// {frame1: time1} means frame1's last byte was received by time1 (values in ns)
+std::unordered_map<char, int> frame_time;
 
 struct conn_io {
     ev_timer timer;
@@ -74,9 +79,15 @@ struct conn_io {
     quiche_conn *conn;
 };
 
-// static void debug_log(const char *line, void *argp) {
-//     fprintf(stderr, "%s\n", line);
-// }
+void log_frames(const char * pkt, const int pkt_len, const int t) {
+    for (int i = 0; i < pkt_len; i++) {
+        if (i+1 < pkt_len && pkt[i] == pkt[i+1]) continue;
+
+        const char& c = pkt[i];
+        bytes_received_per_frame[c]++;
+        frame_time[c] = t;
+    }
+}
 
 ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct sockaddr * dst_addr, socklen_t dst_addr_len) {
     auto res = sendto(sock, out, len, flags, dst_addr, dst_addr_len);
@@ -212,12 +223,11 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                     break;
                 }
 
-                if (start_time == 0) start_time = get_current_time();
+                auto t = get_current_time();
+                if (start_time == 0) start_time = t;
+                log_frames((char*)buf, recv_len, t);
 
                 reliable_recvd += recv_len;
-                // for (int i = 0; i < (int) std::min(static_cast<int>(recv_len), 5); i++) std::cout << buf[i] << " ";
-                // std::cout << std::endl;
-
                 if (fin) {
                     end_time_tcp = get_current_time();
                     ev_timer_init(&udp_timer, udp_timeout_cb, 0.005, 0.0);
@@ -233,12 +243,11 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             if (recv_len < 0) {
                 break;
             } else {
-                // for (int i = 0; i < (int) std::min(static_cast<int>(recv_len), 5); i++) std::cout << buf[i] << " ";
-                // std::cout << std::endl;
+                auto t = get_current_time();
+                if (start_time == 0) start_time = t;
+                log_frames((char*)buf, recv_len, t);
+
                 unreliable_recvd += recv_len;
-                if (udp_data_log[unreliable_recvd] == 0) {
-                    udp_data_log[unreliable_recvd] = get_current_time();
-                }
 
                 if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
                     end_time = get_current_time();
@@ -401,10 +410,6 @@ int main(int argc, char *argv[]) {
     quiche_conn_free(conn);
 
     quiche_config_free(config);
-
-    // for (auto [k, v] : udp_data_log) {
-    //     std::cout << k << " " << (v - start_time)/1000 << std::endl;
-    // }
 
     std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
     std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/(UNRELIABLE_DATA_SIZE ? UNRELIABLE_DATA_SIZE : 1)) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
