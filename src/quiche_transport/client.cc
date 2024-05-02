@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
 
 
     quiche_config_set_initial_congestion_window_packets(config, 10);
-    quiche_config_set_max_idle_timeout(config, 5000);
+    quiche_config_set_max_idle_timeout(config, 10000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_initial_max_data(config, 500000000);

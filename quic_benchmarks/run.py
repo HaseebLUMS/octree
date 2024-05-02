@@ -2,6 +2,9 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
+prefix = "2"
+
+
 def read_csv(file_path):
     data = {}
     with open(file_path, newline='') as csvfile:
@@ -37,11 +40,11 @@ def compare_schemes(file1, file2):
     legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=2)
     # legend.get_frame().set_alpha(0.1)
 
-    plt.savefig("test.pdf")
+    plt.savefig(f"{prefix}.pdf")
 
 
 # Paths to the CSV files
-file1_path = "data/only_stream_frame_time.csv"
-file2_path = "data/w_datagrams_frame_time.csv"
+file1_path = f"data/{prefix}dg_time.csv"
+file2_path = f"data/{prefix}stream_time.csv"
 
 compare_schemes(file1_path, file2_path)
