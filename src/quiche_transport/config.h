@@ -3,8 +3,8 @@
 
 
 
-const int RELIABLE_DATA_SIZE = 100 * 1024 * 1024;
-const int UNRELIABLE_DATA_SIZE = 0 * 1024 * 1024;
+const int RELIABLE_DATA_SIZE = 50 * 1024 * 1024;
+const int UNRELIABLE_DATA_SIZE = 50 * 1024 * 1024;
 
 const char* LOGS_LOCATION = "./../quic_benchmarks/data";  // assuming ./ is the build directory
 
