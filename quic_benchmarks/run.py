@@ -25,11 +25,15 @@ def compare_schemes(file1, file2):
     rects1 = ax.bar(ind - width/2, time1, width, label=file1.split("/")[-1])
     rects2 = ax.bar(ind + width/2, time2, width, label=file2.split("/")[-1])
 
-    ax.set_ylabel('Time')
-    ax.set_xlabel('Frame Type')
+    ax.set_ylabel('Time (ms)')
+    ax.set_xlabel('Frame Name')
     # ax.set_title('Comparison of Time Taken for Frame Types')
     ax.set_xticks(ind)
     ax.set_xticklabels(frames)
+    ax.yaxis.set_major_locator(plt.MultipleLocator(300))
+    ax.yaxis.grid(True, linestyle='-', alpha=0.5)
+
+
     legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=2)
     # legend.get_frame().set_alpha(0.1)
 
