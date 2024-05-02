@@ -1,9 +1,16 @@
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
-prefix = "2"
+prefix = "6"
 
+loss_rate = {
+    "11": 0.5,
+    "9": 5,
+    "8": 0,
+    "6": 1,
+}
 
 def read_csv(file_path):
     data = {}
@@ -13,38 +20,45 @@ def read_csv(file_path):
             data[row[0]] = float(row[1])
     return data
 
-def compare_schemes(file1, file2):
+def compare_schemes(file1):
     scheme1 = read_csv(file1)
-    scheme2 = read_csv(file2)
 
-    frames = sorted(set(scheme1.keys()) | set(scheme2.keys()))
-    time1 = [scheme1.get(frame, 0) for frame in frames]
-    time2 = [scheme2.get(frame, 0) for frame in frames]
+    frames = sorted(set(scheme1.keys()))
 
-    ind = np.arange(len(frames))
+    n = len(frames)//2
+    tcp_frames = frames[0:n]
+    print(len(tcp_frames))
+    dg_frames = frames[n:]
+    print(len(dg_frames))
+
+    time1 = [scheme1.get(frame, 0) for frame in tcp_frames]
+    time2 = [scheme1.get(frame, 0) for frame in dg_frames]
+
+    diff = [x[0]-x[1] for x in zip(time1, time2)]
+    print("Median frame delay:", np.median(diff))
+
+    ind = np.arange(len(tcp_frames))
     width = 0.35
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(ind - width/2, time1, width, label=file1.split("/")[-1])
-    rects2 = ax.bar(ind + width/2, time2, width, label=file2.split("/")[-1])
+    rects1 = ax.bar(ind - width/2, time1, width, label="Reliable Frames")
+    rects2 = ax.bar(ind + width/2, time2, width, label="Best Effort Frames")
 
     ax.set_ylabel('Time (ms)')
     ax.set_xlabel('Frame Name')
-    # ax.set_title('Comparison of Time Taken for Frame Types')
     ax.set_xticks(ind)
-    ax.set_xticklabels(frames)
-    ax.yaxis.set_major_locator(plt.MultipleLocator(300))
+    ax.yaxis.set_major_locator(plt.MultipleLocator(500))
     ax.yaxis.grid(True, linestyle='-', alpha=0.5)
 
+    ax.set_title(f"{loss_rate[prefix]}% Packet Loss Rate | Observed Median Frame Delay: {round(np.median(diff), 1)}ms")
 
     legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=2)
-    # legend.get_frame().set_alpha(0.1)
-
     plt.savefig(f"{prefix}.pdf")
 
+if len(sys.argv) > 1:
+    prefix = str(sys.argv[1])
 
 # Paths to the CSV files
-file1_path = f"data/{prefix}dg_time.csv"
-file2_path = f"data/{prefix}stream_time.csv"
+file1_path = f"data/{prefix}time.csv"
 
-compare_schemes(file1_path, file2_path)
+compare_schemes(file1_path)

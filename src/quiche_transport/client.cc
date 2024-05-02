@@ -228,7 +228,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 }
 
                 auto t = get_current_time();
-                if (start_time == 0) start_time = t;
+                if (start_time == 0 && RELIABLE_DATA_SIZE) start_time = t;
                 log_frames((char*)buf, recv_len, t);
 
                 reliable_recvd += recv_len;
@@ -248,10 +248,11 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 break;
             } else {
                 auto t = get_current_time();
-                if (start_time == 0) start_time = t;
+                if (start_time == 0 && UNRELIABLE_DATA_SIZE) start_time = t;
                 log_frames((char*)buf, recv_len, t);
 
                 unreliable_recvd += recv_len;
+                end_time = t;
 
                 if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
                     end_time = get_current_time();
