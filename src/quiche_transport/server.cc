@@ -56,9 +56,6 @@
 
 #define LOCAL_CONN_ID_LEN 16
 
-#define MAX_DATAGRAM_SIZE 1350
-#define MAX_PKT_SIZE 1300 // Used for sending unreliable datagrams
-
 constexpr uint64_t NANOS_PER_SEC = 1'000'000'000;
 
 int total_flushed = 0;

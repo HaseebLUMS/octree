@@ -52,8 +52,6 @@
 
 #define LOCAL_CONN_ID_LEN 16
 
-#define MAX_DATAGRAM_SIZE 1350
-
 ev_timer udp_timer;
 
 int reliable_recvd = 0;
@@ -271,7 +269,7 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
     struct conn_io *conn_io = (struct conn_io *)w->data;
     quiche_conn_on_timeout(conn_io->conn);
 
-    // fprintf(stderr, "timeout\n");
+    fprintf(stderr, "timeout\n");
 
     flush_egress(loop, conn_io);
 
@@ -415,12 +413,12 @@ int main(int argc, char *argv[]) {
 
     quiche_config_free(config);
 
-    std::cout << "Reliably Received: " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
-    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/(UNRELIABLE_DATA_SIZE ? UNRELIABLE_DATA_SIZE : 1)) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
+    std::cout << "Reliably Received: " << (reliable_recvd*1.0/(RELIABLE_DATA_SIZE ?: 1)) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
+    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/(UNRELIABLE_DATA_SIZE ?: 1)) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
 
     std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
     std::cout << "Total Received (\% out of expected): " << 100 * (1.0 * reliable_recvd + unreliable_recvd)/(RELIABLE_DATA_SIZE + UNRELIABLE_DATA_SIZE) << std::endl;
-    
+
     export_logs(bytes_received_per_frame, frame_time, LOGS_LOCATION, start_time);
     return 0;
 }

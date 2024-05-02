@@ -1,7 +1,12 @@
-const int RELIABLE_DATA_SIZE = 50 * 1024 * 1024;
-const int UNRELIABLE_DATA_SIZE = 50 * 1024 * 1024;
+#define MAX_DATAGRAM_SIZE 1350
+#define MAX_PKT_SIZE 1310 // Used for sending unreliable datagrams
 
-const char* LOGS_LOCATION = "./../benchmark_results";  // assuming ./ is the build directory
+
+
+const int RELIABLE_DATA_SIZE = 100 * 1024 * 1024;
+const int UNRELIABLE_DATA_SIZE = 0 * 1024 * 1024;
+
+const char* LOGS_LOCATION = "./../quic_benchmarks/results";  // assuming ./ is the build directory
 
 void redirectClogToDevNull() {
     static std::ofstream devNull("/dev/null");
