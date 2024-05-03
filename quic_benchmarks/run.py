@@ -67,7 +67,7 @@ def compare_schemes(file1):
     # # ax.set_title(f"{loss_rate[prefix]}% Packet Loss Rate | Observed Median Frame Delay: {round(np.median(diff), 1)}ms")
 
     # legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=2)
-    plt.savefig(f"{file1}_{prefix}.pdf")
+    plt.savefig(f"{file1.split('/')[1]}_{prefix}.pdf")
 
 if len(sys.argv) > 1:
     prefix = str(sys.argv[1])
