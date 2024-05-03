@@ -13,6 +13,7 @@ void export_logs(
     // Construct file paths for saving logs
     std::string bytes_per_frame_file = std::string(logs_dir) + "/bytes_per_frame.csv";
     std::string frame_time_file = std::string(logs_dir) + "/frame_time.csv";
+    std::string e2e_frame_time_file = std::string(logs_dir) + "/e2e_frame_time.csv";
 
     // Export bytes per frame data
     std::ofstream bytes_per_frame_out(bytes_per_frame_file);
@@ -42,5 +43,18 @@ void export_logs(
     } else {
         // Handle error opening file
         std::cerr << "Error opening file: " << frame_time_file << std::endl;
+    }
+
+     // Export frame time data
+    std::ofstream e2e_frame_time_out(e2e_frame_time_file);
+    if (e2e_frame_time_out.is_open()) {
+        for (const auto& [k, v] : frame_end_time) {
+
+            e2e_frame_time_out << k << "," << (1.0 * v - time_offset)/1000.0 << "\n";
+        }
+        e2e_frame_time_out.close();
+    } else {
+        // Handle error opening file
+        std::cerr << "Error opening file: " << e2e_frame_time_file << std::endl;
     }
 }

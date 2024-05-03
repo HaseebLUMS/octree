@@ -10,6 +10,7 @@ loss_rate = {
     "9": 5,
     "8": 0,
     "6": 1,
+    "12": 0.5,
 }
 
 def read_csv(file_path):
@@ -35,7 +36,7 @@ def compare_schemes(file1):
     time2 = [scheme1.get(frame, 0) for frame in dg_frames]
 
     diff = [x[0]-x[1] for x in zip(time1, time2)]
-    print("Median frame delay:", np.median(diff))
+    print(diff)
 
     ind = np.arange(len(tcp_frames))
     width = 0.35
@@ -47,18 +48,20 @@ def compare_schemes(file1):
     ax.set_ylabel('Time (ms)')
     ax.set_xlabel('Frame Name')
     ax.set_xticks(ind)
-    ax.yaxis.set_major_locator(plt.MultipleLocator(500))
+    ax.yaxis.set_major_locator(plt.MultipleLocator(50))
     ax.yaxis.grid(True, linestyle='-', alpha=0.5)
 
-    ax.set_title(f"{loss_rate[prefix]}% Packet Loss Rate | Observed Median Frame Delay: {round(np.median(diff), 1)}ms")
+    # ax.set_title(f"{loss_rate[prefix]}% Packet Loss Rate | Observed Median Frame Delay: {round(np.median(diff), 1)}ms")
 
     legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=2)
-    plt.savefig(f"{prefix}.pdf")
+    plt.savefig(f"{prefix}_{file1}.pdf")
 
 if len(sys.argv) > 1:
     prefix = str(sys.argv[1])
 
 # Paths to the CSV files
 file1_path = f"data/{prefix}time.csv"
+compare_schemes(file1_path)
 
+file1_path = f"data/{prefix}e2etime.csv"
 compare_schemes(file1_path)
