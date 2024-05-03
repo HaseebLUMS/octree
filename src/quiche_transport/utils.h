@@ -5,7 +5,8 @@
 
 void export_logs(
     const std::unordered_map<char, int>& bytes_per_frame,
-    const std::unordered_map<char, int>& frame_time,
+    const std::unordered_map<char, int>& frame_end_time,
+    const std::unordered_map<char, int>& frame_start_time,
     const char* logs_dir,
     const int time_offset) {
 
@@ -28,8 +29,14 @@ void export_logs(
     // Export frame time data
     std::ofstream frame_time_out(frame_time_file);
     if (frame_time_out.is_open()) {
-        for (const auto& entry : frame_time) {
-            frame_time_out << entry.first << "," << (1.0 * entry.second - time_offset)/1000.0 << "\n";
+        for (const auto& [k, v] : frame_end_time) {
+            auto frame_start_it = frame_start_time.find(k);
+            if (frame_start_it == frame_start_time.end()) {
+                std::cerr << "Frame Start Time Not Found: " << k << std::endl;
+                exit(1);
+            }
+
+            frame_time_out << k << "," << (1.0 * v - frame_start_it->second)/1000.0 << "\n";
         }
         frame_time_out.close();
     } else {

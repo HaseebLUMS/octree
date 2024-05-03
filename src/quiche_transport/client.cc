@@ -65,7 +65,8 @@ int end_time_tcp = 0;
 std::unordered_map<char, int> bytes_received_per_frame;
 
 // {frame1: time1} means frame1's last byte was received by time1 (values in ns)
-std::unordered_map<char, int> frame_time;
+std::unordered_map<char, int> frame_end_time;
+std::unordered_map<char, int> frame_start_time;
 
 struct conn_io {
     ev_timer timer;
@@ -82,13 +83,16 @@ void log_frames(const char * pkt, const int pkt_len, const int t) {
     int b = 0;
     for (int i = 0; i < pkt_len; i++) {
         b++;
-        if (i+1 < pkt_len && pkt[i] == pkt[i+1]) {
+        if (i != 0 && i+1 < pkt_len && pkt[i] == pkt[i+1]) {
             continue;
         }
 
         const char& c = pkt[i];
         bytes_received_per_frame[c] += b;
-        frame_time[c] = t;
+
+        if (frame_start_time[c] == 0) frame_start_time[c] = t;
+        frame_end_time[c] = t;
+
         b = 0;
     }
 }
@@ -420,6 +424,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
     std::cout << "Total Received (\% out of expected): " << 100 * (1.0 * reliable_recvd + unreliable_recvd)/(RELIABLE_DATA_SIZE + UNRELIABLE_DATA_SIZE) << std::endl;
 
-    export_logs(bytes_received_per_frame, frame_time, LOGS_LOCATION, start_time);
+    export_logs(bytes_received_per_frame, frame_end_time, frame_start_time, LOGS_LOCATION, start_time);
     return 0;
 }
