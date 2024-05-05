@@ -37,36 +37,22 @@ def compare_schemes(file1):
 
     diff = [x[0]-x[1] for x in zip(time1, time2)]
     print(diff)
-    colors = ['red' if val < 0 else 'blue' for val in diff]
 
+    # Plot CDF for time1 (in red)
+    sorted_time1 = np.sort(time1)
+    cdf_time1 = np.arange(1, len(sorted_time1) + 1) / len(sorted_time1)
+    plt.plot(sorted_time1, cdf_time1, color='red', label='Time1 (TCP)')
 
-    plt.figure()
+    # Plot CDF for time2 (in blue)
+    sorted_time2 = np.sort(time2)
+    cdf_time2 = np.arange(1, len(sorted_time2) + 1) / len(sorted_time2)
+    plt.plot(sorted_time2, cdf_time2, color='blue', label='Time2 (DG)')
+    
+    plt.xlabel('Time (ms)')
+    plt.ylabel('CDF')
+    plt.legend()
+    plt.grid(True)
 
-    plt.bar(range(len(diff)), diff, color=colors)
-
-    t = "Counted Per Frame"
-    if "e2e" in file1:
-        t = "Counted End To End"
-    plt.title(f"How Much Late A Reliable Frame Is?\n{t}")
-    plt.xlabel("Frame Number")
-    plt.ylabel("Time (ms)")
-
-    # ind = np.arange(len(tcp_frames))
-    # width = 0.35
-
-    # fig, ax = plt.subplots()
-    # rects1 = ax.bar(ind - width/2, time1, width, label="Reliable Frames")
-    # rects2 = ax.bar(ind + width/2, time2, width, label="Best Effort Frames")
-
-    # ax.set_ylabel('Time (ms)')
-    # ax.set_xlabel('Frame Name')
-    # ax.set_xticks(ind)
-    # ax.yaxis.set_major_locator(plt.MultipleLocator(500))
-    # ax.yaxis.grid(True, linestyle='-', alpha=0.5)
-
-    # # ax.set_title(f"{loss_rate[prefix]}% Packet Loss Rate | Observed Median Frame Delay: {round(np.median(diff), 1)}ms")
-
-    # legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=2)
     plt.savefig(f"{file1.split('/')[1]}_{prefix}.pdf")
 
 if len(sys.argv) > 1:
@@ -76,5 +62,5 @@ if len(sys.argv) > 1:
 file1_path = f"data/{prefix}time.csv"
 compare_schemes(file1_path)
 
-file1_path = f"data/{prefix}e2etime.csv"
-compare_schemes(file1_path)
+# file1_path = f"data/{prefix}e2etime.csv"
+# compare_schemes(file1_path)
