@@ -11,6 +11,7 @@ loss_rate = {
     "8": 0,
     "6": 1,
     "12": 0.5,
+    "29": 1,
 }
 
 def read_csv(file_path):
@@ -74,5 +75,5 @@ if len(sys.argv) > 1:
 file1_path = f"data/{prefix}time.csv"
 compare_schemes(file1_path)
 
-file1_path = f"data/{prefix}e2etime.csv"
-compare_schemes(file1_path)
+# file1_path = f"data/{prefix}e2etime.csv"
+# compare_schemes(file1_path)
