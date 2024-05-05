@@ -51,8 +51,10 @@
 #include <uthash.h>
 
 #include <quiche.h>
+#include <cassert>
 
 #include "config.h"
+#include "utils.h"
 
 #define LOCAL_CONN_ID_LEN 16
 
@@ -60,11 +62,6 @@ constexpr uint64_t NANOS_PER_SEC = 1'000'000'000;
 
 int total_flushed = 0;
 int processed = 0;
-
-struct frames_data {
-    std::vector<char> tcp_frames;
-    std::vector<char> udp_frames;
-};
 
 void make_chunks_and_send_as_dgrams(quiche_conn *conn, const uint8_t *buf, size_t buf_len) {
     int total_sent = 0;
@@ -308,8 +305,8 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
 
 static void recv_cb(EV_P_ ev_io *w, int revents) {
     frames_data* data = static_cast<frames_data*>(w->data);
-    std::vector<char>* tcp_data_buffer = &data->tcp_frames;
-    std::vector<char>* udp_data_buffer = &data->udp_frames;
+    std::vector<uint8_t>* tcp_data_buffer = &data->tcp_frames;
+    std::vector<uint8_t>* udp_data_buffer = &data->udp_frames;
 
     struct conn_io *tmp, *conn_io = NULL;
 
@@ -645,11 +642,11 @@ int main(int argc, char *argv[]) {
     // quiche_config_enable_hystart(config, true);
 
     ////////////// TEST DATA  //////////////
-    char frame_start = 'A';
+    uint8_t frame_start = 0;
     const int frame_size = 2 * 1024 * 1024;  // 2Mega
 
     int tcp_data_size = RELIABLE_DATA_SIZE;
-    std::vector<char> tcp_data_buffer(tcp_data_size, 'T');
+    std::vector<uint8_t> tcp_data_buffer(tcp_data_size, 'T');
 
     int i = 0;
     while (i < tcp_data_size) {
@@ -659,12 +656,13 @@ int main(int argc, char *argv[]) {
             frame_start++;
             std::cout << frame_start << " " << std::flush;
         }
+        assert(frame_start < 255);
     }
 
     std::cout << std::endl;
 
     int udp_data_size = UNRELIABLE_DATA_SIZE;
-    std::vector<char> udp_data_buffer(udp_data_size, 'U');
+    std::vector<uint8_t> udp_data_buffer(udp_data_size, 'U');
 
     i = 0;
     while (i < udp_data_size) {
@@ -674,6 +672,7 @@ int main(int argc, char *argv[]) {
             frame_start++;
             std::cout << frame_start << " " << std::flush;
         }
+        assert(frame_start < 255);
     }
 
     std::cout << std::endl;

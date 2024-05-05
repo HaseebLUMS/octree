@@ -2,11 +2,18 @@
 #include <fstream>
 #include <unordered_map>
 #include <string>
+#include <vector>
+
+struct frames_data {
+    std::vector<uint8_t> tcp_frames;
+    std::vector<uint8_t> udp_frames;
+};
+
 
 void export_logs(
-    const std::unordered_map<char, int>& bytes_per_frame,
-    const std::unordered_map<char, int>& frame_end_time,
-    const std::unordered_map<char, int>& frame_start_time,
+    const std::unordered_map<uint8_t, int>& bytes_per_frame,
+    const std::unordered_map<uint8_t, int>& frame_end_time,
+    const std::unordered_map<uint8_t, int>& frame_start_time,
     const char* logs_dir,
     const int time_offset) {
 

@@ -62,11 +62,11 @@ int end_time = 0;
 int end_time_tcp = 0;
 
 // {frame1: x} means x bytes for frame1 have been received
-std::unordered_map<char, int> bytes_received_per_frame;
+std::unordered_map<uint8_t, int> bytes_received_per_frame;
 
 // {frame1: time1} means frame1's last byte was received by time1 (values in ns)
-std::unordered_map<char, int> frame_end_time;
-std::unordered_map<char, int> frame_start_time;
+std::unordered_map<uint8_t, int> frame_end_time;
+std::unordered_map<uint8_t, int> frame_start_time;
 
 struct conn_io {
     ev_timer timer;
@@ -79,7 +79,7 @@ struct conn_io {
     quiche_conn *conn;
 };
 
-void log_frames(const char * pkt, const int pkt_len, const int t) {
+void log_frames(const uint8_t * pkt, const int pkt_len, const int t) {
     int b = 0;
     for (int i = 0; i < pkt_len; i++) {
         b++;
@@ -87,7 +87,7 @@ void log_frames(const char * pkt, const int pkt_len, const int t) {
             continue;
         }
 
-        const char& c = pkt[i];
+        const uint8_t& c = pkt[i];
         bytes_received_per_frame[c] += b;
 
         if (frame_start_time[c] == 0) frame_start_time[c] = t;
@@ -233,7 +233,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
 
                 auto t = get_current_time();
                 if (start_time == 0 && RELIABLE_DATA_SIZE) start_time = t;
-                log_frames((char*)buf, recv_len, t);
+                log_frames(buf, recv_len, t);
 
                 reliable_recvd += recv_len;
                 if (fin) {
@@ -253,7 +253,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             } else {
                 auto t = get_current_time();
                 if (start_time == 0 && UNRELIABLE_DATA_SIZE) start_time = t;
-                log_frames((char*)buf, recv_len, t);
+                log_frames(buf, recv_len, t);
 
                 unreliable_recvd += recv_len;
                 end_time = t;
