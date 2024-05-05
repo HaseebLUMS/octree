@@ -638,7 +638,7 @@ int main(int argc, char *argv[]) {
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_verify_peer(config, false);
-    quiche_config_enable_dgram(config, true, 2000000, 500000);
+    quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_enable_pacing(config, true);
 
     quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
