@@ -505,13 +505,13 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                     std::cout << "Sending Both Reliable (" << tcp_data_buffer->size() 
                         << ") & Unreliable Data (" << udp_data_buffer->size() << ")" << std::endl;
 
-                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) tcp_data_buffer->data(), tcp_data_buffer->size(), true);
-                    std::cout << "Reliably sent: " << bytes_sent << std::endl;
-                    processed = bytes_sent;
-
                     if (udp_data_buffer->size() > 1 && UNRELIABLE_DATA_SIZE) {
                         make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) udp_data_buffer->data(), udp_data_buffer->size());
                     }
+
+                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) tcp_data_buffer->data(), tcp_data_buffer->size(), true);
+                    std::cout << "Reliably sent: " << bytes_sent << std::endl;
+                    processed = bytes_sent;
                 }
             }
 
@@ -638,7 +638,7 @@ int main(int argc, char *argv[]) {
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_verify_peer(config, false);
-    quiche_config_enable_dgram(config, true, 2000000, 2000000);
+    quiche_config_enable_dgram(config, true, 2000000, 500000);
     quiche_config_enable_pacing(config, true);
 
     quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
