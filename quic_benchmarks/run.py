@@ -21,6 +21,7 @@ def read_csv(file_path):
             data[row[0]] = float(row[1])
     return data
 
+
 def compare_schemes(file1):
     scheme1 = read_csv(file1)
 
@@ -37,13 +38,24 @@ def compare_schemes(file1):
 
     diff = [x[0]-x[1] for x in zip(time1, time2)]
     print(diff)
+    colors = ['red' if val < 0 else 'blue' for val in diff]
 
-    # Plot CDF for time1 (in red)
+    plt.figure()  # Bar Plots
+    plt.bar(range(len(diff)), diff, color=colors)
+
+    t = "Counted Per Frame"
+    if "e2e" in file1:
+        t = "Counted End To End"
+    plt.title(f"How Much Late A Reliable Frame Is?\n{t}")
+    plt.xlabel("Frame Number")
+    plt.ylabel("Time (ms)")
+    plt.savefig(f"{file1.split('/')[1]}_{prefix}.pdf")
+    
+    plt.figure()  # CDFs
     sorted_time1 = np.sort(time1)
     cdf_time1 = np.arange(1, len(sorted_time1) + 1) / len(sorted_time1)
     plt.plot(sorted_time1, cdf_time1, color='red', label='Time1 (TCP)')
 
-    # Plot CDF for time2 (in blue)
     sorted_time2 = np.sort(time2)
     cdf_time2 = np.arange(1, len(sorted_time2) + 1) / len(sorted_time2)
     plt.plot(sorted_time2, cdf_time2, color='blue', label='Time2 (DG)')
@@ -53,7 +65,7 @@ def compare_schemes(file1):
     plt.legend()
     plt.grid(True)
 
-    plt.savefig(f"{file1.split('/')[1]}_{prefix}.pdf")
+    plt.savefig(f"{file1.split('/')[1]}_{prefix}_cdf.pdf")
 
 if len(sys.argv) > 1:
     prefix = str(sys.argv[1])

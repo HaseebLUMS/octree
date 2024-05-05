@@ -26,7 +26,7 @@ void export_logs(
     std::ofstream bytes_per_frame_out(bytes_per_frame_file);
     if (bytes_per_frame_out.is_open()) {
         for (const auto& entry : bytes_per_frame) {
-            bytes_per_frame_out << entry.first << "," << entry.second << "\n";
+            bytes_per_frame_out << (int)(entry.first) << "," << entry.second << "\n";
         }
         bytes_per_frame_out.close();
     } else {
@@ -44,7 +44,7 @@ void export_logs(
                 exit(1);
             }
 
-            frame_time_out << k << "," << (1.0 * v - frame_start_it->second)/1000.0 << "\n";
+            frame_time_out << (int)k << "," << (1.0 * v - frame_start_it->second)/1000.0 << "\n";
         }
         frame_time_out.close();
     } else {
@@ -57,7 +57,7 @@ void export_logs(
     if (e2e_frame_time_out.is_open()) {
         for (const auto& [k, v] : frame_end_time) {
 
-            e2e_frame_time_out << k << "," << (1.0 * v - time_offset)/1000.0 << "\n";
+            e2e_frame_time_out << (int)k << "," << (1.0 * v - time_offset)/1000.0 << "\n";
         }
         e2e_frame_time_out.close();
     } else {

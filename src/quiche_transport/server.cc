@@ -654,9 +654,9 @@ int main(int argc, char *argv[]) {
         i++;
         if (i % frame_size == 0) {
             frame_start++;
-            std::cout << frame_start << " " << std::flush;
+            std::cout << (int)frame_start << " " << std::flush;
         }
-        assert(frame_start < 255);
+        assert((int)frame_start < 255);
     }
 
     std::cout << std::endl;
@@ -670,9 +670,9 @@ int main(int argc, char *argv[]) {
         i++;
         if (i % frame_size == 0) {
             frame_start++;
-            std::cout << frame_start << " " << std::flush;
+            std::cout << (int)frame_start << " " << std::flush;
         }
-        assert(frame_start < 255);
+        assert((int)frame_start < 255);
     }
 
     std::cout << std::endl;
