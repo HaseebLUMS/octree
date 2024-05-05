@@ -26,16 +26,17 @@ def read_csv(file_path):
 def compare_schemes(file1):
     scheme1 = read_csv(file1)
 
-    frames = sorted(set(scheme1.keys()))
+    frames = sorted([int(x) for x in scheme1.keys()])
 
     n = len(frames)//2
     tcp_frames = frames[0:n]
     print(len(tcp_frames))
+    print(tcp_frames)
     dg_frames = frames[n:]
-    print(len(dg_frames))
+    print(dg_frames)
 
-    time1 = [scheme1.get(frame, 0) for frame in tcp_frames]
-    time2 = [scheme1.get(frame, 0) for frame in dg_frames]
+    time1 = [scheme1.get(str(frame), 0) for frame in tcp_frames]
+    time2 = [scheme1.get(str(frame), 0) for frame in dg_frames]
 
     diff = [x[0]-x[1] for x in zip(time1, time2)]
     print(diff)
@@ -60,7 +61,7 @@ def compare_schemes(file1):
     sorted_time2 = np.sort(time2)
     cdf_time2 = np.arange(1, len(sorted_time2) + 1) / len(sorted_time2)
     plt.plot(sorted_time2, cdf_time2, color='blue', label='Time2 (DG)')
-    
+
     plt.xlabel('Time (ms)')
     plt.ylabel('CDF')
     plt.legend()
