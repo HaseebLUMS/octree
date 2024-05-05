@@ -217,39 +217,38 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
     if (quiche_conn_is_established(conn_io->conn)) {
         uint64_t s = 0;
 
-        // while (1) {
-        //     ssize_t recv_len = quiche_conn_dgram_recv(conn_io->conn, buf, sizeof(buf));
-        //     if (recv_len < 0) {
-        //         break;
-        //     } else {
-        //         auto t = get_current_time();
-        //         if (start_time == 0 && UNRELIABLE_DATA_SIZE) start_time = t;
-        //         log_frames(buf, recv_len, t);
+        while (1) {
+            ssize_t recv_len = quiche_conn_dgram_recv(conn_io->conn, buf, sizeof(buf));
+            if (recv_len < 0) {
+                break;
+            } else {
+                auto t = get_current_time();
+                if (start_time == 0 && UNRELIABLE_DATA_SIZE) start_time = t;
+                log_frames(buf, recv_len, t);
 
-        //         unreliable_recvd += recv_len;
-        //         end_time = t;
+                unreliable_recvd += recv_len;
+                end_time = t;
 
-        //         if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
-        //             end_time = get_current_time();
-        //             ev_timer_stop(loop, &udp_timer);
-        //             // ev_break(EV_A_ EVBREAK_ONE);
-        //         }
-        //     }
-        // }
+                if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
+                    end_time = get_current_time();
+                    ev_timer_stop(loop, &udp_timer);
+                    // ev_break(EV_A_ EVBREAK_ONE);
+                }
+            }
+        }
 
         quiche_stream_iter *readable = quiche_conn_readable(conn_io->conn);
 
         while (quiche_stream_iter_next(readable, &s)) {
             // fprintf(stderr, "stream %" PRIu64 " is readable\n", s);
 
-            bool stream_break = false, dg_break = false;
-            while (!stream_break || !dg_break) {
+            while (1) {
                 bool fin = false;
                 ssize_t recv_len = quiche_conn_stream_recv(conn_io->conn, s,
                                                         buf, MAX_DATAGRAM_SIZE,
                                                         &fin);
                 if (recv_len <= 0) {
-                    stream_break = true;
+                    break;;
                 } else {
                     auto t = get_current_time();
                     if (start_time == 0 && RELIABLE_DATA_SIZE) start_time = t;
@@ -260,24 +259,6 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                         end_time_tcp = get_current_time();
                         ev_timer_init(&udp_timer, udp_timeout_cb, 0.005, 0.0);
                         ev_timer_start(loop, &udp_timer);
-                    }
-                }
-
-                recv_len = quiche_conn_dgram_recv(conn_io->conn, buf, MAX_DATAGRAM_SIZE);
-                if (recv_len < 0) {
-                    dg_break = true;
-                } else {
-                    auto t = get_current_time();
-                    if (start_time == 0 && UNRELIABLE_DATA_SIZE) start_time = t;
-                    log_frames(buf, recv_len, t);
-
-                    unreliable_recvd += recv_len;
-                    end_time = t;
-
-                    if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
-                        end_time = get_current_time();
-                        ev_timer_stop(loop, &udp_timer);
-                        // ev_break(EV_A_ EVBREAK_ONE);
                     }
                 }
             }
