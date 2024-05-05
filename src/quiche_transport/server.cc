@@ -60,6 +60,8 @@
 
 constexpr uint64_t NANOS_PER_SEC = 1'000'000'000;
 
+std::unordered_map<uint8_t, int> frame_server_start_time;
+
 int total_flushed = 0;
 int processed = 0;
 
@@ -579,6 +581,7 @@ static void setsockopt_txtime(int sock)
 int main(int argc, char *argv[]) {
     const char *host = argv[1];
     const char *port = argv[2];
+    // const int run_num = (int)argv[3];
 
     const struct addrinfo hints = {
         .ai_family = PF_UNSPEC,
@@ -635,7 +638,7 @@ int main(int argc, char *argv[]) {
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_verify_peer(config, false);
-    quiche_config_enable_dgram(config, true, 500000, 500000);
+    quiche_config_enable_dgram(config, true, 50000000, 50000000);
     quiche_config_enable_pacing(config, true);
 
     quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);

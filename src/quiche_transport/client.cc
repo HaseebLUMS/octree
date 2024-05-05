@@ -296,6 +296,7 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
 int main(int argc, char *argv[]) {
     const char *host = argv[1];
     const char *port = argv[2];
+    const int run_num = (int)argv[3];
 
     const struct addrinfo hints = {
         .ai_family = PF_UNSPEC,
@@ -424,6 +425,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
     std::cout << "Total Received (\% out of expected): " << 100 * (1.0 * reliable_recvd + unreliable_recvd)/(RELIABLE_DATA_SIZE + UNRELIABLE_DATA_SIZE) << std::endl;
 
-    export_logs(bytes_received_per_frame, frame_end_time, frame_start_time, LOGS_LOCATION, start_time);
+    export_logs(bytes_received_per_frame, frame_end_time, frame_start_time, LOGS_LOCATION, start_time, run_num);
     return 0;
 }

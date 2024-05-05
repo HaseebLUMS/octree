@@ -15,12 +15,13 @@ void export_logs(
     const std::unordered_map<uint8_t, int>& frame_end_time,
     const std::unordered_map<uint8_t, int>& frame_start_time,
     const char* logs_dir,
-    const int time_offset) {
+    const int time_offset,
+    const int run_num) {
 
     // Construct file paths for saving logs
-    std::string bytes_per_frame_file = std::string(logs_dir) + "/bytes_per_frame.csv";
-    std::string frame_time_file = std::string(logs_dir) + "/frame_time.csv";
-    std::string e2e_frame_time_file = std::string(logs_dir) + "/e2e_frame_time.csv";
+    std::string bytes_per_frame_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "bytes.csv";
+    std::string frame_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "time.csv";
+    std::string e2e_frame_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "e2etime.csv";
 
     // Export bytes per frame data
     std::ofstream bytes_per_frame_out(bytes_per_frame_file);
