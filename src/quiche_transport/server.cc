@@ -641,7 +641,7 @@ int main(int argc, char *argv[]) {
     quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR);
     // quiche_config_enable_hystart(config, true);
 
     ////////////// TEST DATA  //////////////

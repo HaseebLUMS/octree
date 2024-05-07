@@ -22,6 +22,7 @@ void export_logs(
     std::string bytes_per_frame_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "bytes.csv";
     std::string frame_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "time.csv";
     std::string e2e_frame_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "e2etime.csv";
+    std::string start_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "starttime.csv";
 
     // Export bytes per frame data
     std::ofstream bytes_per_frame_out(bytes_per_frame_file);
@@ -53,7 +54,7 @@ void export_logs(
         std::cerr << "Error opening file: " << frame_time_file << std::endl;
     }
 
-     // Export frame time data
+    // Export frame time data
     std::ofstream e2e_frame_time_out(e2e_frame_time_file);
     if (e2e_frame_time_out.is_open()) {
         for (const auto& [k, v] : frame_end_time) {
@@ -64,5 +65,17 @@ void export_logs(
     } else {
         // Handle error opening file
         std::cerr << "Error opening file: " << e2e_frame_time_file << std::endl;
+    }
+
+    // Export frame time data
+    std::ofstream start_time_out(start_time_file);
+    if (start_time_out.is_open()) {
+        for (const auto& [k, v] : frame_start_time) {
+            start_time_out << (int)k << "," << (int)(v/1000.0) << "\n";
+        }
+        start_time_out.close();
+    } else {
+        // Handle error opening file
+        std::cerr << "Error opening file: " << start_time_file << std::endl;
     }
 }
