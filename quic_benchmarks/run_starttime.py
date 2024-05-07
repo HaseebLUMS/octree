@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 # Data from your file
 start_times = {}
 end_times = {}
 
-prefix = 40
+prefix = 6
+if len(sys.argv) > 1:
+    prefix = str(sys.argv[1])
 
 file1 = f"data/{prefix}starttime.csv"
 file2 = f"data/{prefix}time.csv"
