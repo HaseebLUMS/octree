@@ -79,7 +79,7 @@ struct conn_io {
     quiche_conn *conn;
 };
 
-void log_frames(const uint8_t * pkt, const int pkt_len, const int t, bool unreliable) {
+void log_frames(const uint8_t * pkt, const int pkt_len, const int t, const bool unreliable) {
     int b = 0;
     for (int i = 0; i < pkt_len; i++) {
         b++;
@@ -91,7 +91,7 @@ void log_frames(const uint8_t * pkt, const int pkt_len, const int t, bool unreli
 
         if (frame_start_time[c] == 0) frame_start_time[c] = t;
 
-        if (unreliable && bytes_received_per_frame[c] <= GOOD_ENOUGH_FRAME) {
+        if (unreliable == false || bytes_received_per_frame[c] < GOOD_ENOUGH_FRAME) {
             frame_end_time[c] = t;
             bytes_received_per_frame[c] += b;
         }
