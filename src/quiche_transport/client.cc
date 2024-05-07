@@ -91,10 +91,8 @@ void log_frames(const uint8_t * pkt, const int pkt_len, const int t, const bool 
 
         if (frame_start_time[c] == 0) frame_start_time[c] = t;
 
-        if (unreliable == false || bytes_received_per_frame[c] < GOOD_ENOUGH_FRAME) {
-            frame_end_time[c] = t;
-            bytes_received_per_frame[c] += b;
-        }
+        frame_end_time[c] = t;
+        bytes_received_per_frame[c] += b;
 
         b = 0;
     }
