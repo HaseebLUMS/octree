@@ -646,7 +646,6 @@ int main(int argc, char *argv[]) {
 
     ////////////// TEST DATA  //////////////
     uint8_t frame_start = 0;
-    const int frame_size = 2 * 1024 * 1024;  // 2Mega
 
     int tcp_data_size = RELIABLE_DATA_SIZE;
     std::vector<uint8_t> tcp_data_buffer(tcp_data_size, 0);
@@ -655,7 +654,7 @@ int main(int argc, char *argv[]) {
     while (i < tcp_data_size) {
         tcp_data_buffer[i] = frame_start;
         i++;
-        if (i % frame_size == 0) {
+        if (i % FRAME_SIZE == 0) {
             frame_start++;
             std::cout << (int)frame_start << " " << std::flush;
         }
@@ -671,7 +670,7 @@ int main(int argc, char *argv[]) {
     while (i < udp_data_size) {
         udp_data_buffer[i] = frame_start;
         i++;
-        if (i % frame_size == 0) {
+        if (i % FRAME_SIZE == 0) {
             frame_start++;
             std::cout << (int)frame_start << " " << std::flush;
         }

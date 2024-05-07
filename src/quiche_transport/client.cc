@@ -79,7 +79,7 @@ struct conn_io {
     quiche_conn *conn;
 };
 
-void log_frames(const uint8_t * pkt, const int pkt_len, const int t) {
+void log_frames(const uint8_t * pkt, const int pkt_len, const int t, bool unreliable) {
     int b = 0;
     for (int i = 0; i < pkt_len; i++) {
         b++;
@@ -88,10 +88,13 @@ void log_frames(const uint8_t * pkt, const int pkt_len, const int t) {
         }
 
         const uint8_t& c = pkt[i];
-        bytes_received_per_frame[c] += b;
 
         if (frame_start_time[c] == 0) frame_start_time[c] = t;
-        frame_end_time[c] = t;
+
+        if (unreliable && bytes_received_per_frame[c] <= GOOD_ENOUGH_FRAME) {
+            frame_end_time[c] = t;
+            bytes_received_per_frame[c] += b;
+        }
 
         b = 0;
     }
@@ -224,7 +227,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             } else {
                 auto t = get_current_time();
                 if (start_time == 0 && UNRELIABLE_DATA_SIZE) start_time = t;
-                log_frames(buf, recv_len, t);
+                log_frames(buf, recv_len, t, true);
 
                 unreliable_recvd += recv_len;
                 end_time = t;
@@ -252,7 +255,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 } else {
                     auto t = get_current_time();
                     if (start_time == 0 && RELIABLE_DATA_SIZE) start_time = t;
-                    log_frames(buf, recv_len, t);
+                    log_frames(buf, recv_len, t, false);
 
                     reliable_recvd += recv_len;
                     if (fin) {
