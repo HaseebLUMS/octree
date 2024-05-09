@@ -24,33 +24,33 @@ include(FetchContent)
 
 # FetchContent_MakeAvailable(readerwriterqueue)
 
-## Octree
-# pkg_search_module(WEBP REQUIRED libwebp)
-# pkg_search_module(JPEG REQUIRED libjpeg)
+# Octree
+pkg_search_module(WEBP REQUIRED libwebp)
+pkg_search_module(JPEG REQUIRED libjpeg)
 # pkg_search_module(AVIF REQUIRED libavif)
 # pkg_search_module(AVIF REQUIRED libavif)
-# pkg_search_module(TURBOJPEG REQUIRED libturbojpeg)
+pkg_search_module(TURBOJPEG REQUIRED libturbojpeg)
 
-# find_package(Eigen3 3.1.2)
-# find_package(PCL 1.1.0 REQUIRED)
+find_package(Eigen3 3.1.2)
+find_package(PCL 1.1.0 REQUIRED)
 
-# include_directories(${PCL_INCLUDE_DIRS})
-# link_directories(${PCL_LIBRARY_DIRS})
-# add_definitions(${PCL_DEFINITIONS})
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
-# link_directories(${TURBOJPEG_LIBDIR})
+link_directories(${TURBOJPEG_LIBDIR})
 
-# add_executable(octree src/main.cpp src/common.cpp)
+add_executable(octree src/main.cpp src/common.cpp)
 
-# target_link_libraries(
-#     octree
-#     ${WEBP_LIBRARIES}
-#     ${JPEG_LIBRARIES}
-#     ${PCL_LIBRARIES}
-#     ${AVIF_LIBRARIES}
-#     ${TURBOJPEG_LIBRARIES}
-#     readerwriterqueue
-# )
+target_link_libraries(
+    octree
+    ${WEBP_LIBRARIES}
+    ${JPEG_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${AVIF_LIBRARIES}
+    ${TURBOJPEG_LIBRARIES}
+    # readerwriterqueue
+)
 
 ## Quiche (Cloudflare)
 

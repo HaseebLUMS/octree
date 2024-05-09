@@ -52,19 +52,14 @@ def compare_schemes(file1):
     plt.xlabel("Frame Number")
     plt.ylabel("Time (ms)")
     plt.savefig(f"{file1.split('/')[1]}_{prefix}.pdf")
-    
+
     plt.figure()  # CDFs
-    sorted_time1 = np.sort(time1)
-    cdf_time1 = np.arange(1, len(sorted_time1) + 1) / len(sorted_time1)
-    plt.plot(sorted_time1, cdf_time1, color='red', label='Time1 (TCP)')
+    diff = np.sort(diff)
+    cdf_diff = np.arange(1, len(diff) + 1) / len(diff)
+    plt.plot(diff, cdf_diff, color='blue')
 
-    sorted_time2 = np.sort(time2)
-    cdf_time2 = np.arange(1, len(sorted_time2) + 1) / len(sorted_time2)
-    plt.plot(sorted_time2, cdf_time2, color='blue', label='Time2 (DG)')
-
-    plt.xlabel('Time (ms)')
+    plt.xlabel('Time Savings (ms)')
     plt.ylabel('CDF')
-    plt.legend()
     plt.grid(True)
 
     plt.savefig(f"{file1.split('/')[1]}_{prefix}_cdf.pdf")
@@ -73,8 +68,8 @@ if len(sys.argv) > 1:
     prefix = str(sys.argv[1])
 
 # Paths to the CSV files
-file1_path = f"data/{prefix}time.csv"
-compare_schemes(file1_path)
+# file1_path = f"data/{prefix}time.csv"
+# compare_schemes(file1_path)
 
 file1_path = f"data/{prefix}e2etime.csv"
 compare_schemes(file1_path)

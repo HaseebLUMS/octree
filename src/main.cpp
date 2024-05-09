@@ -33,8 +33,8 @@ int main() {
         auto decompressed_colors = decompressColors(compressed_colors, color_dec);
         auto t4 = std::chrono::high_resolution_clock::now();
 
-        writeToFile("./../output/testavif_small.ply", points, decompressed_colors);
-        showStats(non_negotiable_comp_part, negotiable_comp_part, compressed_colors, {t1, t2, t3, t4});
+        writeToFile("./../output/ricardo.ply", points, decompressed_colors);
+        // showStats(non_negotiable_comp_part, negotiable_comp_part, compressed_colors, {t1, t2, t3, t4});
         test();
     }
 }

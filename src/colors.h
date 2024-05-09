@@ -9,7 +9,7 @@
 #include <webp/types.h>
 #include <webp/encode.h>
 #include <webp/decode.h>
-#include <avif/avif.h>
+// #include <avif/avif.h>
 
 class ColorEncDec {
 public:
@@ -19,7 +19,7 @@ public:
     ~ColorEncDec(){}
 protected:
     int nbands_{3};
-    int qual_{70};
+    int qual_{100};
     std::string test_filename_jpg{"./../output/test_image.jpg"};
     std::string test_filename_webp{"./../output/test_image.webp"};
     std::string test_filename_avif{"./../output/test_image.avif"};
