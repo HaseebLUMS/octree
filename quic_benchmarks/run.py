@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-prefixes = ["90", "91", "92", "93", "94"]
+prefixes = ["75", "76", "77", "78", "79"]
 
 loss_rate = {
     "11": 0.5,
