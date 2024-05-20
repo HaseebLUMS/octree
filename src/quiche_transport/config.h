@@ -6,11 +6,10 @@
 #define MAX_PKT_SIZE 1310 // Used for sending unreliable datagrams
 
 
-const int RELIABLE_DATA_SIZE = 50 * 1024 * 1024;
-const int UNRELIABLE_DATA_SIZE = 50 * 1024 * 1024;
+const int RELIABLE_DATA_SIZE = 100 * 1024 * 1024;
+const int UNRELIABLE_DATA_SIZE = 100 * 1024 * 1024;
 
-const int FRAME_SIZE = 2 * 1024 * 1024;  // 2Mega
-const int GOOD_ENOUGH_FRAME = 0.95 * FRAME_SIZE;
+const int FRAME_SIZE = 4 * 1024 * 1024;  // Bytes
 
 const char* LOGS_LOCATION = "./../quic_benchmarks/data";  // assuming ./ is the build directory
 

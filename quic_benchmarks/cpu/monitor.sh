@@ -1,13 +1,15 @@
 #!/bin/bash
 
-# Check if port number is provided as an argument
-if [ -z "$1" ]; then
-    echo "Usage: $0 <port>"
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <port> <mode>"
+    echo "mode: 'a' for average or 'i' for instantaneous"
     exit 1
 fi
 
-# Assign the provided argument to the PORT variable
+# Assign the provided arguments to variables
 PORT=$1
+MODE=$2
 
 # Get the PID of the process using the specified port
 PID=$(lsof -t -i :$PORT)
@@ -18,22 +20,41 @@ if [ -z "$PID" ]; then
     exit 1
 fi
 
-echo "Monitoring CPU usage for PID: $PID"
+# Validate the mode
+if [ "$MODE" != "a" ] && [ "$MODE" != "i" ] && [ "$MODE" != "ai" ]; then
+    echo "Invalid mode. Please specify 'a' for average, 'i' for instantaneous or 'ai' for both"
+    exit 1
+fi
 
-# Monitor CPU usage of the process every second
+echo "Monitoring CPU usage for PID: $PID in $MODE mode"
+
+# Monitor average CPU usage
 while true; do
-    # Get CPU usage using top
-    CPU_USAGE=$(top -b -n 2 -d 1 -p $PID | grep $PID | tail -1 | awk '{print $9}')
+    CPU_USAGE_AVERAGE=$(ps -p $PID -o %cpu=)
+    CPU_USAGE_INSTANTANEOUS=$(top -b -n 2 -d 1 -p $PID | grep $PID | tail -1 | awk '{print $9}')
     
-    # Check if CPU_USAGE is not empty (process may have terminated)
-    if [ -z "$CPU_USAGE" ]; then
+    if [ -z "$CPU_USAGE_AVERAGE" ]; then
         echo "Process $PID not found or has terminated."
         exit 1
     fi
-    
-    # Print the CPU usage
-    echo $CPU_USAGE
-    
-    # Wait for 1 second
+
+    if [ -z "$CPU_USAGE_INSTANTANEOUS" ]; then
+        echo "Process $PID not found or has terminated."
+        exit 1
+    fi
+
+
+    if [ "$MODE" == "a" ]; then
+        echo $CPU_USAGE_AVERAGE
+    fi
+
+    if [ "$MODE" == "i" ]; then
+        echo $CPU_USAGE_INSTANTANEOUS        
+    fi
+
+    if [ "$MODE" == "ai" ]; then
+        echo $CPU_USAGE_AVERAGE,$CPU_USAGE_INSTANTANEOUS        
+    fi
+
     sleep 1
 done
