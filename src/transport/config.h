@@ -14,7 +14,7 @@ const int UDP_SOCKET_WAIT = 20000; // microseconds (us)
 const int BUFFER_SIZE = 1470;
 const int BUFFER_SIZE_WITH_EXTRA_ROOM = BUFFER_SIZE + 100;
 
-const int RELIABLE_DATA_SIZE = 1 * 1024 * 1024;
-const int UNRELIABLE_DATA_SIZE = 2 * 1024 * 1024;
+const int RELIABLE_DATA_SIZE = 100 * 1024 * 1024;
+const int UNRELIABLE_DATA_SIZE = 100 * 1024 * 1024;
 
 const int CUSHION_IN_SLEEP_CALCULATIONS = 3; // microseconds
