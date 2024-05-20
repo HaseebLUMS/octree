@@ -10,9 +10,9 @@ int main(int argc, char* argv[]) {
     std::string transport_scheme_tcp_udp_part_2 = "TCP+UDP(UDP)";
 
     while (true) {
-        std::string message;
-        std::cout << "Enter a message to send (or 'exit' to quit): ";
-        std::getline(std::cin, message);
+        std::string message = "udp";
+        // std::cout << "Enter a message to send (or 'exit' to quit): ";
+        // std::getline(std::cin, message);
 
         if (message == "exit") {
             break;
@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
         auto end = std::chrono::high_resolution_clock::now();
         auto elapased = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "The transport took " << elapased.count() << " milliseconds." << std::endl;
+
+        break;
     }
 
     close(udp_socket);
