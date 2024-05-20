@@ -52,6 +52,28 @@ target_link_libraries(
     # readerwriterqueue
 )
 
+## Unix Transport
+
+add_executable(server src/transport/server.cc)
+add_executable(client src/transport/man_client.cc)
+add_executable(auto_client src/transport/auto_client.cc)
+
+target_link_libraries(
+    server
+    pthread
+
+)
+
+target_link_libraries(
+    client
+    pthread
+)
+
+target_link_libraries(
+    auto_client
+    pthread
+)
+
 ## Quiche (Cloudflare)
 
 add_custom_target(

@@ -1,10 +1,10 @@
-const char* SERVER_IP = "127.0.0.1";
-const char* CLIENT_IP = "127.0.0.1";
+const char* SERVER_IP = "192.168.1.233";
+const char* CLIENT_IP = "192.168.1.252";
 
 const int PACKET_RATE_Mbps = 200;
 
-const int SERVER_TCP_PORT = 9999;
-const int SERVER_UDP_PORT = 8888;
+const int SERVER_TCP_PORT = 8998;
+const int SERVER_UDP_PORT = 9889;
 
 const int CLIENT_TCP_PORT = 9998;
 const int CLIENT_UDP_PORT = 8887;

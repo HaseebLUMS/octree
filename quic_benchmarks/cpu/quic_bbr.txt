@@ -9,4 +9,4 @@ Monitoring CPU usage for PID: 212824 in ai mode
 44.2,0.0
 37.9,0.0
 34.6,0.0
-Process 212824 not found or has terminated.
+
