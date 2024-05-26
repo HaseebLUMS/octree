@@ -17,6 +17,8 @@
 #include <pcl/point_types.h>
 #include <pcl/io/ply_io.h>
 
+const float DROP_PROBABILITY = 0.1;
+
 typedef pcl::PointXYZRGB PointType;
 typedef pcl::PointCloud<PointType> PointCloudType;
 typedef pcl::octree::OctreePointCloud<PointType> OctreeType;
