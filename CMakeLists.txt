@@ -31,18 +31,18 @@ pkg_search_module(JPEG REQUIRED libjpeg)
 # pkg_search_module(AVIF REQUIRED libavif)
 pkg_search_module(TURBOJPEG REQUIRED libturbojpeg)
 
+# pkg_search_module(JSONCPP REQUIRED libjsoncpp)
+
 find_package(Eigen3 3.1.2)
 find_package(PCL 1.1.0 REQUIRED)
 find_package(OpenCV REQUIRED)
-
-find_package(jsoncpp REQUIRED)
+find_package(JsonCpp REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 include_directories(${OpenCV_INCLUDE_DIRS})
-
 
 link_directories(${TURBOJPEG_LIBDIR})
 
@@ -56,6 +56,7 @@ target_link_libraries(
     ${PCL_LIBRARIES}
     ${AVIF_LIBRARIES}
     ${TURBOJPEG_LIBRARIES}
+    ${JsonCpp_LIBRARIES}
     # readerwriterqueue
 )
 
@@ -67,8 +68,7 @@ target_link_libraries(
     ${AVIF_LIBRARIES}
     ${TURBOJPEG_LIBRARIES}
     ${OpenCV_LIBS}
-    jsoncpp_lib
-    # readerwriterqueue
+    ${JsonCpp_LIBRARIES}
 )
 
 ## Unix Transport
