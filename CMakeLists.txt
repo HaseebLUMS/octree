@@ -35,6 +35,7 @@ find_package(Eigen3 3.1.2)
 find_package(PCL 1.1.0 REQUIRED)
 find_package(OpenCV REQUIRED)
 
+find_package(jsoncpp REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -66,6 +67,7 @@ target_link_libraries(
     ${AVIF_LIBRARIES}
     ${TURBOJPEG_LIBRARIES}
     ${OpenCV_LIBS}
+    jsoncpp_lib
     # readerwriterqueue
 )
 
