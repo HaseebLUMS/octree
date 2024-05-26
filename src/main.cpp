@@ -7,6 +7,7 @@ int main() {
     pcl::PLYReader Reader;
     Reader.read("./../assets/ricardo.ply", *cloud);
     std::vector<double> voxel_sizes = {1};
+
     for (auto vox : voxel_sizes) {
         OctreeType octree(vox);
         octree.setInputCloud(cloud);

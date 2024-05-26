@@ -47,7 +47,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${TURBOJPEG_LIBDIR})
 
 add_executable(octree src/main.cpp src/common.cpp)
-add_executable(ssim src/quality_test/ssim.cpp)
+add_executable(hausdorff src/quality_test/hausdorff.cpp)
 
 target_link_libraries(
     octree
@@ -61,7 +61,7 @@ target_link_libraries(
 )
 
 target_link_libraries(
-    ssim
+    hausdorff
     ${WEBP_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${PCL_LIBRARIES}
