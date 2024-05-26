@@ -33,14 +33,20 @@ pkg_search_module(TURBOJPEG REQUIRED libturbojpeg)
 
 find_package(Eigen3 3.1.2)
 find_package(PCL 1.1.0 REQUIRED)
+find_package(OpenCV REQUIRED)
+
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+
 link_directories(${TURBOJPEG_LIBDIR})
 
 add_executable(octree src/main.cpp src/common.cpp)
+add_executable(ssim src/quality_test/ssim.cpp)
 
 target_link_libraries(
     octree
@@ -49,6 +55,17 @@ target_link_libraries(
     ${PCL_LIBRARIES}
     ${AVIF_LIBRARIES}
     ${TURBOJPEG_LIBRARIES}
+    # readerwriterqueue
+)
+
+target_link_libraries(
+    ssim
+    ${WEBP_LIBRARIES}
+    ${JPEG_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${AVIF_LIBRARIES}
+    ${TURBOJPEG_LIBRARIES}
+    ${OpenCV_LIBS}
     # readerwriterqueue
 )
 
