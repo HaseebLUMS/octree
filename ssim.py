@@ -21,7 +21,7 @@ def trim_image(image):
     # Convert to grayscale if necessary
     if len(image.shape) == 3:
         image = color.rgb2gray(image)
-    
+        
     # Binarize the image using Otsu's thresholding
     thresh = threshold_otsu(image)
     binary = image > thresh
