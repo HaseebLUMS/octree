@@ -1,3 +1,28 @@
+// Copyright (C) 2018-2019, Cloudflare, Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+// IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -6,9 +31,11 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include <chrono>
+#include <ctime>
 #include <thread>
 
 #include <fcntl.h>
@@ -24,22 +51,24 @@
 #include <uthash.h>
 
 #include <quiche.h>
+#include <cassert>
 
 #include "config.h"
+#include "utils.h"
 
 #define LOCAL_CONN_ID_LEN 16
 
-#define MAX_DATAGRAM_SIZE 1350
-#define MAX_PKT_SIZE 1200 // Used for sending unreliable datagrams
+constexpr uint64_t NANOS_PER_SEC = 1'000'000'000;
+
+std::unordered_map<uint8_t, int> frame_server_start_time;
 
 int total_flushed = 0;
-std::string reliable_resp = "";
 int processed = 0;
 
 void make_chunks_and_send_as_dgrams(quiche_conn *conn, const uint8_t *buf, size_t buf_len) {
     int total_sent = 0;
     while (total_sent < buf_len) {
-        auto bytes_sent = quiche_conn_dgram_send(conn, (uint8_t *) buf, std::min((unsigned long)MAX_PKT_SIZE, buf_len-total_sent));
+        auto bytes_sent = quiche_conn_dgram_send(conn, (uint8_t *) (buf + total_sent), std::min((unsigned long)MAX_PKT_SIZE, buf_len-total_sent));
 
         if (bytes_sent == -1) {
             std::cerr << "Could not send dgrams" << std::endl;
@@ -49,22 +78,6 @@ void make_chunks_and_send_as_dgrams(quiche_conn *conn, const uint8_t *buf, size_
     }
 
     std::cout << "Total Dgrams Data sent: " << total_sent << std::endl;
-
-    return;
-}
-
-void make_chunks_and_send_in_stream(quiche_conn *conn, uint64_t stream_id, const uint8_t *buf, size_t buf_len, bool fin) {
-    int total_sent = 0;
-    while (total_sent < buf_len) {
-        auto bytes_sent = quiche_conn_stream_send(conn, stream_id, (uint8_t *) buf, std::min((unsigned long)MAX_PKT_SIZE, buf_len-total_sent), false);
-        if (bytes_sent == -1) {
-            std::cerr << "Could not send packet in stream: " << bytes_sent << std::endl;
-            break;
-        }
-        total_sent += bytes_sent;
-    }
-
-    std::cout << "Total Stream Data sent: " << total_sent << std::endl;
 
     return;
 }
@@ -104,13 +117,15 @@ static struct connections *conns = NULL;
 
 static void timeout_cb(EV_P_ ev_timer *w, int revents);
 
-// static void debug_log(const char *line, void *argp) {
-//     fprintf(stderr, "%s\n", line);
-// }
+static void debug_log(const char *line, void *argp) {
+    fprintf(stderr, "%s\n", line);
+}
+
+inline uint64_t timespec_to_nanos(timespec& ts) {
+    return (ts.tv_sec * NANOS_PER_SEC) + (ts.tv_nsec);
+}
 
 ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct sockaddr * dst_addr, socklen_t dst_addr_len, timespec txtime) {
-    
-    // return sendto(sock, out, len, flags, dst_addr, dst_addr_len);
     struct iovec iov[1];
     iov[0].iov_base = out;
     iov[0].iov_len = len;
@@ -134,7 +149,8 @@ ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct
     cmsg->cmsg_level = SOL_SOCKET;
     cmsg->cmsg_type = SCM_TXTIME;
     cmsg->cmsg_len = CMSG_LEN(sizeof(uint64_t));
-    uint64_t timestamp_ns = txtime.tv_sec *(1000ULL * 1000 * 1000) + txtime.tv_nsec;
+
+    uint64_t timestamp_ns = timespec_to_nanos(txtime);
 
     memcpy(CMSG_DATA(cmsg), &timestamp_ns, sizeof(uint64_t));
 
@@ -151,9 +167,8 @@ ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct
 static void flush_egress(struct ev_loop *loop, struct conn_io *conn_io) {
     static uint8_t out[MAX_DATAGRAM_SIZE];
 
-    quiche_send_info send_info;
-
     while (1) {
+        quiche_send_info send_info;
         ssize_t written = quiche_conn_send(conn_io->conn, out, sizeof(out),
                                            &send_info);
 
@@ -177,14 +192,6 @@ static void flush_egress(struct ev_loop *loop, struct conn_io *conn_io) {
         }
 
         total_flushed += sent;
-        auto ats = (double)send_info.at.tv_sec;
-        auto atns = (double)send_info.at.tv_nsec;
-        // if (ats != 0 || atns != 0)
-        //     std::cout << ats << " : " << atns << std::endl;
-
-        // fprintf(stderr, "senttt %zd bytes\n", sent);
-        // std::string str((char *)out, sent);
-        // std::cout << str << std::endl;
     }
 
     double t = quiche_conn_timeout_as_nanos(conn_io->conn) / 1e9f;
@@ -283,6 +290,8 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
     conn_io->sock = conns->sock;
     conn_io->conn = conn;
 
+    // quiche_conn_set_qlog_path(conn, "./qlog_server.qlog", "QLOG Server", "");
+
     memcpy(&conn_io->peer_addr, peer_addr, peer_addr_len);
     conn_io->peer_addr_len = peer_addr_len;
 
@@ -297,13 +306,9 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
 }
 
 static void recv_cb(EV_P_ ev_io *w, int revents) {
-
-    int tcp_data_size = RELIABLE_DATA_SIZE;
-    std::vector<char> tcp_data_buffer(tcp_data_size, 'T');
-
-    int udp_data_size = UNRELIABLE_DATA_SIZE;
-    std::vector<char> udp_data_buffer(udp_data_size, 'U');
-    udp_data_buffer[udp_data_size-1] = 'C';
+    frames_data* data = static_cast<frames_data*>(w->data);
+    std::vector<uint8_t>* tcp_data_buffer = &data->tcp_frames;
+    std::vector<uint8_t>* udp_data_buffer = &data->udp_frames;
 
     struct conn_io *tmp, *conn_io = NULL;
 
@@ -447,19 +452,28 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             continue;
         }
 
-
-
         // fprintf(stderr, "recv %zd bytes\n", done);
 
         if (quiche_conn_is_established(conn_io->conn)) {
             uint64_t ws = 0;
             quiche_stream_iter *writable = quiche_conn_writable(conn_io->conn);
+
             while (quiche_stream_iter_next(writable, &ws)) {
-                if (processed < reliable_resp.size()) {
-                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, ws, (uint8_t *) reliable_resp.data()+processed, reliable_resp.size()-processed, true);
+                if (processed && processed < tcp_data_buffer->size()) {
+                    auto bytes_sent = quiche_conn_stream_send(
+                        conn_io->conn, ws,
+                        (uint8_t *) (tcp_data_buffer->data() + processed),
+                        tcp_data_buffer->size() - processed, true);
+                    
+                    if (bytes_sent < 0) {
+                        std::cout << "Problem!" << std::endl;
+                        exit(1);
+                    }
+
                     processed += bytes_sent;
                 }
             }
+
             quiche_stream_iter_free(writable);
 
             uint64_t s = 0;
@@ -478,33 +492,26 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
                 }
 
                 auto msg = "init";
-                if (strncmp((char *)buf, "udp", 3)) {
+
+                if (strncmp((char *)buf, "udp", 3) == 0) {
                     msg = "udp";
-                } else if (strncmp((char *)buf, "tcp", 3)) {
+                } else if (strncmp((char *)buf, "tcp", 3) == 0) {
                     msg = "tcp";
                 }
 
-                msg = "udp";
+                std::cout << msg << std::endl;
 
                 if (fin) {
-                    reliable_resp = "byez\n";
-                    std::string unreliable_resp = "";
-                    if (strncmp((char *)msg, "tcp", 3) == 0) {
-                        std::cout << "Sending Only Reliable Data" << std::endl;
-                        reliable_resp = (std::string)tcp_data_buffer.data() + (std::string)udp_data_buffer.data();
-                        unreliable_resp = "";
-                    } else if (strncmp((char *)msg, "udp", 3) == 0) {
-                        std::cout << "Sending Both Reliable (" << tcp_data_buffer.size() << ") & Unreliable Data (" << udp_data_buffer.size() << ")" << std::endl;
-                        reliable_resp = (std::string)tcp_data_buffer.data();
-                        unreliable_resp = (std::string)udp_data_buffer.data();
+                    std::cout << "Sending Both Reliable (" << tcp_data_buffer->size() 
+                        << ") & Unreliable Data (" << udp_data_buffer->size() << ")" << std::endl;
+
+                    if (udp_data_buffer->size() > 1 && UNRELIABLE_DATA_SIZE) {
+                        make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) udp_data_buffer->data(), udp_data_buffer->size());
                     }
 
-                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) reliable_resp.data(), reliable_resp.size(), true);
+                    auto bytes_sent = quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) tcp_data_buffer->data(), tcp_data_buffer->size(), true);
+                    std::cout << "Reliably sent: " << bytes_sent << std::endl;
                     processed = bytes_sent;
-
-                    if (unreliable_resp.size() > 1) {
-                        make_chunks_and_send_as_dgrams(conn_io->conn, (uint8_t *) unreliable_resp.data(), unreliable_resp.size());
-                    }
                 }
             }
 
@@ -522,8 +529,8 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             quiche_conn_stats(conn_io->conn, &stats);
             quiche_conn_path_stats(conn_io->conn, 0, &path_stats);
 
-            fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu\n",
-                    stats.recv, stats.sent, stats.lost, path_stats.rtt, path_stats.cwnd);
+            fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu retransmitted=%zu\n",
+                    stats.recv, stats.sent, stats.lost, path_stats.rtt, path_stats.cwnd, stats.retrans);
 
             HASH_DELETE(hh, conns->h, conn_io);
 
@@ -538,8 +545,6 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
     struct conn_io *conn_io = (struct conn_io *)w->data;
     quiche_conn_on_timeout(conn_io->conn);
 
-    fprintf(stderr, "timeout\n");
-
     flush_egress(loop, conn_io);
 
     if (quiche_conn_is_closed(conn_io->conn)) {
@@ -549,8 +554,8 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
         quiche_conn_stats(conn_io->conn, &stats);
         quiche_conn_path_stats(conn_io->conn, 0, &path_stats);
         std::cout << "Total flushed: " << total_flushed << std::endl;
-        fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu\n",
-                stats.recv, stats.sent, stats.lost, path_stats.rtt, path_stats.cwnd);
+        fprintf(stderr, "connection closed, recv=%zu sent=%zu lost=%zu rtt=%" PRIu64 "ns cwnd=%zu retransmitted=%zu rate=%zu\n",
+                stats.recv, stats.sent, path_stats.lost, path_stats.rtt, path_stats.cwnd, path_stats.retrans, path_stats.delivery_rate);
 
         HASH_DELETE(hh, conns->h, conn_io);
 
@@ -564,33 +569,19 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
 
 static void setsockopt_txtime(int sock)
 {
-    // Method from https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/net/sockets/txtime/src/main.c
-    // bool optval = true;
-	// if (setsockopt(sock, SOL_SOCKET, SO_TXTIME, &optval, sizeof(optval))) {
-    //     perror("setsockopt txtime (0)");
-    // }
-
-    // Method from https://unix.stackexchange.com/questions/718661/after-enabling-etf-qdisc-packets-are-only-sent-for-a-few-seconds
-    struct sock_txtime so_txtime_val = { .clockid = CLOCK_MONOTONIC };
-    struct sock_txtime so_txtime_val_read = { 1 };
-    socklen_t vallen = sizeof(so_txtime_val);
+    struct sock_txtime so_txtime_val = { .clockid = CLOCK_MONOTONIC, .flags = 0 };
     so_txtime_val.flags = (SOF_TXTIME_REPORT_ERRORS);
+
     if (setsockopt(sock, SOL_SOCKET, SO_TXTIME, &so_txtime_val, sizeof(so_txtime_val))) {
-        perror("setsockopt txtime (1)");
-    }
-
-    if (getsockopt(sock, SOL_SOCKET, SO_TXTIME, &so_txtime_val_read, &vallen)) {
-        perror("getsockopt txtime (2)");
-    }
-
-    if (vallen != sizeof(so_txtime_val) || memcmp(&so_txtime_val, &so_txtime_val_read, vallen)) {
-        perror("getsockopt txtime: mismatch");
+        perror("setsockopt txtime::");
+        exit(1);
     }
 }
 
 int main(int argc, char *argv[]) {
     const char *host = argv[1];
     const char *port = argv[2];
+    // const int run_num = (int)argv[3];
 
     const struct addrinfo hints = {
         .ai_family = PF_UNSPEC,
@@ -630,25 +621,69 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    quiche_config_load_cert_chain_from_pem_file(config, "./cert.crt");
-    quiche_config_load_priv_key_from_pem_file(config, "./cert.key");
+    auto a = quiche_config_load_cert_chain_from_pem_file(config, "./cert.crt");
+    auto b = quiche_config_load_priv_key_from_pem_file(config, "./cert.key");
 
     quiche_config_set_application_protos(config,
         (uint8_t *) "\x0ahq-interop\x05hq-29\x05hq-28\x05hq-27\x08http/0.9", 38);
 
     quiche_config_set_initial_congestion_window_packets(config, 10);
-    quiche_config_set_max_idle_timeout(config, 5000);
+    quiche_config_set_max_idle_timeout(config, 10000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 50000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
+    quiche_config_set_initial_max_data(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 500000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 500000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_verify_peer(config, false);
-    quiche_config_enable_dgram(config, true, 5000, 5000);
+    quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_enable_pacing(config, true);
+
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_enable_hystart(config, true);
+
+    ////////////// TEST DATA  //////////////
+    uint8_t frame_start = 0;
+
+    int tcp_data_size = RELIABLE_DATA_SIZE;
+    std::vector<uint8_t> tcp_data_buffer(tcp_data_size, 0);
+
+    int i = 0;
+    while (i < tcp_data_size) {
+        tcp_data_buffer[i] = frame_start;
+        i++;
+        if (i % FRAME_SIZE == 0) {
+            frame_start++;
+            std::cout << (int)frame_start << " " << std::flush;
+        }
+        assert((int)frame_start < 255);
+    }
+
+    std::cout << std::endl;
+
+    int udp_data_size = UNRELIABLE_DATA_SIZE;
+    std::vector<uint8_t> udp_data_buffer(udp_data_size, 0);
+
+    i = 0;
+    while (i < udp_data_size) {
+        udp_data_buffer[i] = frame_start;
+        i++;
+        if (i % FRAME_SIZE == 0) {
+            frame_start++;
+            std::cout << (int)frame_start << " " << std::flush;
+        }
+        assert((int)frame_start < 255);
+    }
+
+    std::cout << std::endl;
+
+    frames_data data = {
+        .tcp_frames = tcp_data_buffer,
+        .udp_frames = udp_data_buffer,
+    };
+    ////////////// TEST DATA END  //////////////
 
     struct connections c;
     c.sock = sock;
@@ -664,7 +699,7 @@ int main(int argc, char *argv[]) {
 
     ev_io_init(&watcher, recv_cb, sock, EV_READ);
     ev_io_start(loop, &watcher);
-    watcher.data = &c;
+    watcher.data = &data;
 
     ev_loop(loop, 0);
 

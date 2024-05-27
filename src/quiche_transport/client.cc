@@ -1,11 +1,38 @@
+// Copyright (C) 2018-2019, Cloudflare, Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+// IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
-
+#include <chrono>
 #include <iostream>
+#include <fstream>
 
 #include <fcntl.h>
 #include <errno.h>
@@ -13,23 +40,33 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <map>
+#include <unordered_map>
 
 #include <ev.h>
 
 #include <quiche.h>
 
 #include "config.h"
+#include "utils.h"
 
 #define LOCAL_CONN_ID_LEN 16
-
-#define MAX_DATAGRAM_SIZE 1350
 
 ev_timer udp_timer;
 
 int reliable_recvd = 0;
 int unreliable_recvd = 0;
 int total_recv = 0;
+int start_time = 0;
+int end_time = 0;
+int end_time_tcp = 0;
 
+// {frame1: x} means x bytes for frame1 have been received
+std::unordered_map<uint8_t, int> bytes_received_per_frame;
+
+// {frame1: time1} means frame1's last byte was received by time1 (values in ns)
+std::unordered_map<uint8_t, int> frame_end_time;
+std::unordered_map<uint8_t, int> frame_start_time;
 
 struct conn_io {
     ev_timer timer;
@@ -42,9 +79,24 @@ struct conn_io {
     quiche_conn *conn;
 };
 
-// static void debug_log(const char *line, void *argp) {
-//     fprintf(stderr, "%s\n", line);
-// }
+void log_frames(const uint8_t * pkt, const int pkt_len, const int t, const bool unreliable) {
+    int b = 0;
+    for (int i = 0; i < pkt_len; i++) {
+        b++;
+        if (i != 0 && i+1 < pkt_len && pkt[i] == pkt[i+1]) {
+            continue;
+        }
+
+        const uint8_t& c = pkt[i];
+
+        if (frame_start_time[c] == 0) frame_start_time[c] = t;
+
+        frame_end_time[c] = t;
+        bytes_received_per_frame[c] += b;
+
+        b = 0;
+    }
+}
 
 ssize_t send_using_txtime(int sock, uint8_t* out, ssize_t len, int flags, struct sockaddr * dst_addr, socklen_t dst_addr_len) {
     auto res = sendto(sock, out, len, flags, dst_addr, dst_addr_len);
@@ -85,6 +137,11 @@ static void flush_egress(struct ev_loop *loop, struct conn_io *conn_io) {
     double t = quiche_conn_timeout_as_nanos(conn_io->conn) / 1e9f;
     conn_io->timer.repeat = t;
     ev_timer_again(loop, &conn_io->timer);
+}
+
+static void udp_timeout_cb(EV_P_ ev_timer *w, int revents) {
+    end_time = get_current_time();
+    ev_break(EV_A_ EVBREAK_ONE);
 }
 
 static void recv_cb(EV_P_ ev_io *w, int revents) {
@@ -128,11 +185,8 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             continue;
         }
 
-        // fprintf(stderr, "recv %zd bytes\n", done);
         total_recv += done;
     }
-
-    // fprintf(stderr, "done reading\n");
 
     if (quiche_conn_is_closed(conn_io->conn)) {
         fprintf(stderr, "connection closed\n");
@@ -150,7 +204,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
         fprintf(stderr, "connection established: %.*s\n",
                 (int) app_proto_len, app_proto);
 
-        const static uint8_t r[] = "GET /index.html\r\n";
+        const static uint8_t r[] = "udp /index.html\r\n";
         if (quiche_conn_stream_send(conn_io->conn, 4, r, sizeof(r), true) < 0) {
             fprintf(stderr, "failed to send HTTP request\n");
             return;
@@ -164,6 +218,26 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
     if (quiche_conn_is_established(conn_io->conn)) {
         uint64_t s = 0;
 
+        while (1) {
+            ssize_t recv_len = quiche_conn_dgram_recv(conn_io->conn, buf, sizeof(buf));
+            if (recv_len < 0) {
+                break;
+            } else {
+                auto t = get_current_time();
+                if (start_time == 0 && UNRELIABLE_DATA_SIZE) start_time = t;
+                log_frames(buf, recv_len, t, true);
+
+                unreliable_recvd += recv_len;
+                end_time = t;
+
+                if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
+                    end_time = get_current_time();
+                    ev_timer_stop(loop, &udp_timer);
+                    // ev_break(EV_A_ EVBREAK_ONE);
+                }
+            }
+        }
+
         quiche_stream_iter *readable = quiche_conn_readable(conn_io->conn);
 
         while (quiche_stream_iter_next(readable, &s)) {
@@ -172,56 +246,36 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             while (1) {
                 bool fin = false;
                 ssize_t recv_len = quiche_conn_stream_recv(conn_io->conn, s,
-                                                        buf, sizeof(buf),
+                                                        buf, MAX_DATAGRAM_SIZE,
                                                         &fin);
                 if (recv_len <= 0) {
-                    break;
+                    break;;
+                } else {
+                    auto t = get_current_time();
+                    if (start_time == 0 && RELIABLE_DATA_SIZE) start_time = t;
+                    log_frames(buf, recv_len, t, false);
+
+                    reliable_recvd += recv_len;
+                    if (fin) {
+                        end_time_tcp = get_current_time();
+                        ev_timer_init(&udp_timer, udp_timeout_cb, 0.005, 0.0);
+                        ev_timer_start(loop, &udp_timer);
+                    }
                 }
-
-                // std::cout << "Total Stream Bytes Received: " << recv_len << std::endl;
-                reliable_recvd += recv_len;
-                // printf("%.*s", (int) recv_len, buf);
-
-                // if (fin) {
-                //     if (quiche_conn_close(conn_io->conn, true, 0, NULL, 0) < 0) {
-                //         fprintf(stderr, "failed to close connection\n");
-                //     }
-                // }
             }
         }
 
         quiche_stream_iter_free(readable);
-
-        while (1) {
-            ssize_t recv_len = quiche_conn_dgram_recv(conn_io->conn, buf, sizeof(buf));
-            if (recv_len < 0) {
-                break;
-            } else {
-                // std::cout << "Total Dgram Bytes Received: " << recv_len << std::endl;
-                unreliable_recvd += recv_len;
-                if (unreliable_recvd >= UNRELIABLE_DATA_SIZE) {
-                    ev_timer_stop(loop, &udp_timer);
-                }
-                // ev_timer_start(loop, &udp_timer);
-                // printf("%.*s", (int) recv_len, buf);
-            }
-        }
-
     }
 
     flush_egress(loop, conn_io);
-}
-
-static void udp_timeout_cb(EV_P_ ev_timer *w, int revents) {
-    std::cout << "(Timeout) Unreliable data received: " << (1.0*unreliable_recvd) /  UNRELIABLE_DATA_SIZE << std::endl;
-    ev_break(EV_A_ EVBREAK_ONE);
 }
 
 static void timeout_cb(EV_P_ ev_timer *w, int revents) {
     struct conn_io *conn_io = (struct conn_io *)w->data;
     quiche_conn_on_timeout(conn_io->conn);
 
-    // fprintf(stderr, "timeout\n");
+    fprintf(stderr, "timeout\n");
 
     flush_egress(loop, conn_io);
 
@@ -243,6 +297,7 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
 int main(int argc, char *argv[]) {
     const char *host = argv[1];
     const char *port = argv[2];
+    const int run_num = std::stoi(argv[3]);
 
     const struct addrinfo hints = {
         .ai_family = PF_UNSPEC,
@@ -277,22 +332,25 @@ int main(int argc, char *argv[]) {
 
     quiche_config_set_application_protos(config,
         (uint8_t *) "\x0ahq-interop\x05hq-29\x05hq-28\x05hq-27\x08http/0.9", 38);
-    
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+
+
     quiche_config_set_initial_congestion_window_packets(config, 10);
-    quiche_config_set_max_idle_timeout(config, 5000);
+    quiche_config_set_max_idle_timeout(config, 10000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
-    quiche_config_set_initial_max_data(config, 50000000);
-    quiche_config_set_initial_max_stream_data_bidi_local(config, 5000000);
-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 5000000);
-    quiche_config_set_initial_max_stream_data_uni(config, 5000000);
+    quiche_config_set_initial_max_data(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_local(config, 500000000);
+    quiche_config_set_initial_max_stream_data_bidi_remote(config, 500000000);
+    quiche_config_set_initial_max_stream_data_uni(config, 500000000);
     quiche_config_set_initial_max_streams_bidi(config, 100);
     quiche_config_set_initial_max_streams_uni(config, 100);
     quiche_config_set_disable_active_migration(config, true);
-    quiche_config_enable_dgram(config, true, 5000, 5000);
+    quiche_config_enable_dgram(config, true, 2000000, 2000000);
     quiche_config_verify_peer(config, false);
     quiche_config_enable_pacing(config, true);
+
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_enable_hystart(config, true);
 
     if (getenv("SSLKEYLOGFILE")) {
       quiche_config_log_keys(config);
@@ -333,10 +391,13 @@ int main(int argc, char *argv[]) {
     if (conn == NULL) {
         fprintf(stderr, "failed to create connection\n");
         return -1;
+    } else {
+        std::cout << "Connection successful" << std::endl;
     }
 
     conn_io->sock = sock;
     conn_io->conn = conn;
+    // quiche_conn_set_qlog_path(conn, "./qlog_client.qlog", "QLOG Client", "");
 
     ev_io watcher;
 
@@ -349,8 +410,6 @@ int main(int argc, char *argv[]) {
     ev_init(&conn_io->timer, timeout_cb);
     conn_io->timer.data = conn_io;
 
-    ev_timer_init(&udp_timer, udp_timeout_cb, 1, 0.0);
-
     flush_egress(loop, conn_io);
 
     ev_loop(loop, 0);
@@ -361,9 +420,12 @@ int main(int argc, char *argv[]) {
 
     quiche_config_free(config);
 
-    std::cout << "Reliably Received: " << reliable_recvd << " " << (reliable_recvd*1.0/RELIABLE_DATA_SIZE) << std::endl;
-    std::cout << "Unreliably Received: " << unreliable_recvd << " " << (unreliable_recvd*1.0/UNRELIABLE_DATA_SIZE) << std::endl;
-    std::cout << "Total Received: " << total_recv << std::endl;
+    std::cout << "Reliably Received: " << (reliable_recvd*1.0/(RELIABLE_DATA_SIZE ?: 1)) << " in " << (end_time_tcp-start_time)/1000 << " ms." << std::endl;
+    std::cout << "Unreliably Received: " << (unreliable_recvd*1.0/(UNRELIABLE_DATA_SIZE ?: 1)) << "(i.e., "<< unreliable_recvd << ")"<< " in " << (end_time-start_time)/1000 << " ms."<< std::endl;
 
+    std::cout << "Total Received: " << (1.0*total_recv)/(1024*1024) << " MBs" << std::endl;
+    std::cout << "Total Received (\% out of expected): " << 100 * (1.0 * reliable_recvd + unreliable_recvd)/(RELIABLE_DATA_SIZE + UNRELIABLE_DATA_SIZE) << std::endl;
+
+    export_logs(bytes_received_per_frame, frame_end_time, frame_start_time, LOGS_LOCATION, start_time, run_num);
     return 0;
 }

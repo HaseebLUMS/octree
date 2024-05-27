@@ -11,27 +11,6 @@
 
 #include "config.h"
 
-// std::chrono::microseconds getInterPacketDurationUsingTCPInfo(int tcp_client_socket, const int packet_size_in_bytes) {
-//     tcp_info info;
-//     socklen_t len = sizeof(info);
-//     if (getsockopt(tcp_client_socket, IPPROTO_TCP, TCP_INFO, &info, &len) != 0) {
-//         perror("getsockopt failed\n");
-//         exit(1);
-//     }
-
-//     const double rtt_ms = std::max((double)info.tcpi_rtt, 0.1);
-//     const double owd_ms = rtt_ms / 2; // rough
-//     const double owds_in_a_sec = 1000/owd_ms;
-//     const double sending_rate_byte_per_sec = (info.tcpi_snd_cwnd*info.tcpi_pmtu) * owds_in_a_sec;
-
-//     auto interval = std::chrono::microseconds(static_cast<long long>(1000000.0 * packet_size_in_bytes / sending_rate_byte_per_sec));
-//     std::cout << "Sleeping duration: " << interval.count() << " microseconds" << std::endl;
-//     std::cout << "RTT: " << info.tcpi_rtt << " ms" << std::endl;
-//     std::cout << "CWND: " << info.tcpi_snd_cwnd << std::endl;
-//     std::cout << "PMTU: " << info.tcpi_pmtu << std::endl;
-//     return interval;
-// }
-
 std::chrono::microseconds getInterPacketDuration(const int packet_size_in_bytes, const int packet_rate_in_Mbps) {
     const int packet_size_in_bits = packet_size_in_bytes * 8;
     auto interval = std::chrono::microseconds(static_cast<long long>((1000000.0 * packet_size_in_bits / (packet_rate_in_Mbps*1000000)) - CUSHION_IN_SLEEP_CALCULATIONS));

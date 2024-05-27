@@ -1,0 +1,81 @@
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
+#include <string>
+#include <vector>
+
+struct frames_data {
+    std::vector<uint8_t> tcp_frames;
+    std::vector<uint8_t> udp_frames;
+};
+
+
+void export_logs(
+    const std::unordered_map<uint8_t, int>& bytes_per_frame,
+    const std::unordered_map<uint8_t, int>& frame_end_time,
+    const std::unordered_map<uint8_t, int>& frame_start_time,
+    const char* logs_dir,
+    const int time_offset,
+    const int run_num) {
+
+    // Construct file paths for saving logs
+    std::string bytes_per_frame_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "bytes.csv";
+    std::string frame_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "time.csv";
+    std::string e2e_frame_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "e2etime.csv";
+    std::string start_time_file = std::string(logs_dir) + "/" + std::to_string(run_num) + "starttime.csv";
+
+    // Export bytes per frame data
+    std::ofstream bytes_per_frame_out(bytes_per_frame_file);
+    if (bytes_per_frame_out.is_open()) {
+        for (const auto& entry : bytes_per_frame) {
+            bytes_per_frame_out << (int)(entry.first) << "," << entry.second << "\n";
+        }
+        bytes_per_frame_out.close();
+    } else {
+        // Handle error opening file
+        std::cerr << "Error opening file: " << bytes_per_frame_file << std::endl;
+    }
+
+    // Export frame time data
+    std::ofstream frame_time_out(frame_time_file);
+    if (frame_time_out.is_open()) {
+        for (const auto& [k, v] : frame_end_time) {
+            auto frame_start_it = frame_start_time.find(k);
+            if (frame_start_it == frame_start_time.end()) {
+                std::cerr << "Frame Start Time Not Found: " << k << std::endl;
+                exit(1);
+            }
+
+            frame_time_out << (int)k << "," << (1.0 * v - frame_start_it->second)/1000.0 << "\n";
+        }
+        frame_time_out.close();
+    } else {
+        // Handle error opening file
+        std::cerr << "Error opening file: " << frame_time_file << std::endl;
+    }
+
+    // Export frame time data
+    std::ofstream e2e_frame_time_out(e2e_frame_time_file);
+    if (e2e_frame_time_out.is_open()) {
+        for (const auto& [k, v] : frame_end_time) {
+
+            e2e_frame_time_out << (int)k << "," << (1.0 * v - time_offset)/1000.0 << "\n";
+        }
+        e2e_frame_time_out.close();
+    } else {
+        // Handle error opening file
+        std::cerr << "Error opening file: " << e2e_frame_time_file << std::endl;
+    }
+
+    // Export frame time data
+    std::ofstream start_time_out(start_time_file);
+    if (start_time_out.is_open()) {
+        for (const auto& [k, v] : frame_start_time) {
+            start_time_out << (int)k << "," << (int)(v/1000.0) << "\n";
+        }
+        start_time_out.close();
+    } else {
+        // Handle error opening file
+        std::cerr << "Error opening file: " << start_time_file << std::endl;
+    }
+}

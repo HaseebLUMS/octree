@@ -17,6 +17,8 @@
 #include <pcl/point_types.h>
 #include <pcl/io/ply_io.h>
 
+const float DROP_PROBABILITY = 0.1;
+
 typedef pcl::PointXYZRGB PointType;
 typedef pcl::PointCloud<PointType> PointCloudType;
 typedef pcl::octree::OctreePointCloud<PointType> OctreeType;
@@ -44,7 +46,8 @@ struct Color {
 
 std::vector<float> getRootCenter(OctreeType& octree);
 Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, uint8_t bit_pos);
-void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors);
+void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors, float drop_prob, bool block_drop);
+std::vector<bool> generate_mask_for_block_drops(double drop_probability, size_t N);
 int getRandomNumber(int x, int y);
 int dropOrNot(double drop_probability_percentage);
 std::unordered_map<int, long long int> getNodeCountsPerLevel(OctreeType& octree);

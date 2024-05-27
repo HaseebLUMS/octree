@@ -63,13 +63,35 @@ Eigen::Vector4f getChildCenter(Eigen::Vector4f parent_center, float side_len, ui
     return child_center;
 }
 
-void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors) {
-        
+std::vector<bool> generate_mask_by_simulating_drops(float dp, size_t total) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+
+    std::vector<bool> res;
+    for (size_t i = 0; i < total; i++) {
+        float rand_num = dis(gen);
+        res.push_back(rand_num >= dp);
+    }
+
+    return res;
+}
+
+void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std::vector<Color> colors, float drop_prob=0, bool block_drop=false) {
+    /**
+     * For Simulating the effect of ocatavius, have not implemented the actual protocol yet
+    */
+    std::vector<bool> mask;
+    if (!block_drop) mask = generate_mask_by_simulating_drops(drop_prob, centers.size());
+    else  mask = generate_mask_for_block_drops(drop_prob, centers.size());
+
+    int trueCount = std::count(mask.begin(), mask.end(), true);
+
     std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
         outputFile << "ply" << "\n";
         outputFile << "format ascii 1.0" << "\n";
-        outputFile << "element vertex " << centers.size() << "\n";
+        outputFile << "element vertex " << trueCount << "\n";
         outputFile << "property float x" << "\n";
         outputFile << "property float y" << "\n";
         outputFile << "property float z" << "\n";
@@ -78,6 +100,8 @@ void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std
         outputFile << "property uchar blue" << "\n";
         outputFile << "end_header" << "\n";
         for (int i = 0; i < centers.size(); i++) {
+            if (mask[i] == false) continue;
+
             const auto& center = centers[i];
             const auto& color = colors[i];
             // auto color = cloud->points[i];
@@ -88,6 +112,28 @@ void writeToFile(std::string filename, std::vector<Eigen::Vector4f> centers, std
     } else {
         std::cerr << "Unable to open the file." << std::endl;
     }
+}
+
+std::vector<bool> generate_mask_for_block_drops(double drop_probability, size_t N) {
+    // Initialize vector with true values
+    std::vector<bool> result(N, true);
+    
+    // Calculate the block size based on drop probability
+    size_t drop_size = static_cast<size_t>(drop_probability * N);
+    
+    // If drop size is 0, return the vector as is
+    if (drop_size == 0) return result;
+    
+    // Randomly select a starting position for the block
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(0, N - drop_size);
+    size_t start_pos = dist(gen);
+    
+    // Set the values in the block to false
+    std::fill(result.begin() + start_pos, result.begin() + start_pos + drop_size, false);
+    
+    return result;
 }
 
 int getRandomNumber(int x, int y) {

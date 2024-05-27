@@ -23,7 +23,7 @@ void showStats(
 void showStatsForAnalysis( std::chrono::system_clock::time_point start, 
     std::chrono::system_clock::time_point end,
     int total_received, int total_data_to_receive, const std::string& transport_scheme, int message_id) {
-    
+
     double percentage_data_recvd = 100*(double)total_received/total_data_to_receive;
     auto time_milliseconds = (std::chrono::duration_cast<std::chrono::milliseconds>(end - start)).count();
 
@@ -46,9 +46,7 @@ void receiveData(int socket, int total_data_to_receive, const std::string& trans
         total_received += bytes_received;
     }
     auto end = std::chrono::high_resolution_clock::now();
-    // showStats(start, end, total_received);
     showStatsForAnalysis(start, end, total_received, total_data_to_receive, transport_scheme, message_id);
-    // std::cout << "Received " << (100*((double)total_received/total_data_to_receive)) << "\% of " << total_data_to_receive << std::endl;
 }
 
 int initiliazeClient(int argc, char* argv[], int& tcp_socket, int& udp_socket) {

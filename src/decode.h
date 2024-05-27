@@ -54,6 +54,28 @@ std::tuple<std::vector<Eigen::Vector4f>, float> decompressNonNegotiableBytes(non
     return make_tuple(decompressed_centers, current_side_length);
 }
 
+// std::vector<Eigen::Vector4f> simulate_drops(float drop_percentage, const std::vector<Eigen::Vector4f>& points) {
+//     // Seed the random number generator
+//     std::random_device rd;
+//     std::mt19937 gen(rd());
+//     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+
+//     std::vector<Eigen::Vector4f> remaining_points;
+//     for (const auto& point : points) {
+//         // Generate a random number between 0 and 1
+//         float rand_num = dis(gen);
+//         // If the random number is less than the drop percentage, drop the point
+//         if (rand_num < drop_percentage) {
+//             // Do not add the point to the dropped_points vector
+//             continue;
+//         }
+//         // Add the point to the dropped_points vector
+//         remaining_points.push_back(point);
+//     }
+//     return remaining_points;
+// }
+
+
 // TODO: A lot of common code in decompressNonNegotiableBytes and decompressNegotiableBytes. Factor that out.
 std::vector<Eigen::Vector4f> decompressNegotiableBytes(negotiablePartOfCompressedOctree compressed_octree, std::vector<Eigen::Vector4f> decompressed_centers, float side_length) {
     auto compressed_bytes = compressed_octree.negotiable_bytes;
@@ -98,6 +120,15 @@ std::vector<Eigen::Vector4f> decompressNegotiableBytes(negotiablePartOfCompresse
         points.push_back(curr_center);
     }
 
+
+    // std::cout << "Original Points: " << points.size() << std::endl;
+
+    /**
+     * Used for achieving the effect of our Octavious system. 
+    */
+    // points = simulate_drops(DROP_PROBABILITY, points);
+
+    // std::cout << "Remaining Points: " << points.size() << std::endl;
     return points;
 }
 

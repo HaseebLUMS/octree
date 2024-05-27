@@ -1,8 +1,12 @@
 bazel-**
 assets/**
+!assets/ricardo.ply
 output/**
 **/.DS_Store
 mvfst/_build
 a.out
 build/**
+!build/
+!build/cert.crt
+!build/cert.key
 third_party_build
