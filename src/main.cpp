@@ -1,11 +1,16 @@
+#include <filesystem>
+
 #include "common.h"
 #include "encode.h"
 #include "decode.h"
 
+const char* dataset = "ricardo.ply";
+
 int main() {
     pcl::PointCloud<PointType>::Ptr cloud (new pcl::PointCloud<PointType>);
     pcl::PLYReader Reader;
-    Reader.read("./../assets/ricardo.ply", *cloud);
+
+    Reader.read(std::string("./../assets/") + dataset, *cloud);
     std::vector<double> voxel_sizes = {1};
 
     for (auto vox : voxel_sizes) {
@@ -34,7 +39,20 @@ int main() {
         auto decompressed_colors = decompressColors(compressed_colors, color_dec);
         auto t4 = std::chrono::high_resolution_clock::now();
 
-        writeToFile("./../output/ricardo.ply", points, decompressed_colors);
+        std::vector<float> drops = {0.0, 0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.5};
+
+        std::string path = std::string("./../output/") + dataset + std::string("/");
+        if (!std::filesystem::exists(path)) {
+            if (std::filesystem::create_directory(path)) {
+                std::cout << "Directory created successfully: " << path << std::endl;
+            } else {
+                std::cerr << "Failed to create directory: " << path << std::endl;
+            }
+        }
+
+        for (auto d : drops) {
+            writeToFile(path + std::to_string(d) + std::string(".ply"), points, decompressed_colors, d);
+        }
         // showStats(non_negotiable_comp_part, negotiable_comp_part, compressed_colors, {t1, t2, t3, t4});
         test();
     }
