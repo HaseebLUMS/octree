@@ -1,13 +1,21 @@
-taming transport for point clouds
+Run `setup.sh` script before doing anything. Then follow the following steps:
 
-It's a bazel project. See BUILD file for targets. 
+On Server
+1. `cmake -S . -B build/`
+2. `cd build/`
+3. `make quiche_server`
+4. `./quiche_server <Server IP> <PORT>`
 
-Run `bazel run :encdec --cxxopt=-std=c++17` for seeing encoder and decoder in action. 
+On Client
+1. `cmake -S . -B build/`
+2. `cd build/`
+3. `make quiche_client`
+4. `./quiche_client <Server IP> <PORT>` (yes, server ip and the server port)
 
-You may need to run:
+Always run server first. 
+On server, you can monitor the cpu usage by:
 
-You need to increase OS UDP Buffer sizes. On Linux, run:
+1. `cd quic_benchmarks/cpu`
+2. `./monitor.sh <PORT> a` 
 
-sudo sysctl -w net.core.rmem_default=26214400
-
-sudo sysctl -w net.core.rmem_max=26214400
+The monitor script will find the process using PORT and monitor the cpu usage of that process. 

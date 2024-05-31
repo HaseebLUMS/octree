@@ -297,7 +297,7 @@ static void timeout_cb(EV_P_ ev_timer *w, int revents) {
 int main(int argc, char *argv[]) {
     const char *host = argv[1];
     const char *port = argv[2];
-    const int run_num = std::stoi(argv[3]);
+    const int run_num = 0;
 
     const struct addrinfo hints = {
         .ai_family = PF_UNSPEC,

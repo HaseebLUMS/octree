@@ -2,8 +2,8 @@
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <port> <mode>"
-    echo "mode: 'a' for average or 'i' for instantaneous"
+    echo "Usage: $0 <port on which server is running> <mode>"
+    echo "mode: 'a' for average, 'i' for instantaneous, or 'ai' for both"
     exit 1
 fi
 
