@@ -47,7 +47,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${TURBOJPEG_LIBDIR})
 
 add_executable(octree src/main.cpp src/common.cpp)
-add_executable(hausdorff src/quality_test/hausdorff.cpp)
 
 target_link_libraries(
     octree
@@ -59,6 +58,21 @@ target_link_libraries(
     ${JsonCpp_LIBRARIES}
     # readerwriterqueue
 )
+
+add_executable(sample_data src/sample.cpp src/common.cpp)
+
+target_link_libraries(
+    sample_data
+    ${WEBP_LIBRARIES}
+    ${JPEG_LIBRARIES}
+    ${PCL_LIBRARIES}
+    ${AVIF_LIBRARIES}
+    ${TURBOJPEG_LIBRARIES}
+    ${JsonCpp_LIBRARIES}
+    # readerwriterqueue
+)
+
+add_executable(hausdorff src/quality_test/hausdorff.cpp)
 
 target_link_libraries(
     hausdorff

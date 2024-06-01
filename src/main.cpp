@@ -42,7 +42,8 @@ int main() {
         auto decompressed_colors = decompressColors(compressed_colors, color_dec);
         auto t4 = std::chrono::high_resolution_clock::now();
 
-        std::vector<double> drops = {0.0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7};
+        // std::vector<double> drops = {0.0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.6, 0.7};
+        std::vector<double> drops = {0.0};
 
         std::string path = std::string("./../output/") + dataset + std::string("/");
         if (!std::filesystem::exists(path)) {
@@ -59,7 +60,7 @@ int main() {
             std::string str = s.str(); 
 
             writeToFile(str + std::string(".ply"), points, decompressed_colors, d, false);
-            writeToFile(str + std::string("_block.ply"), points, decompressed_colors, d, true);
+            // writeToFile(str + std::string("_block.ply"), points, decompressed_colors, d, true);
         }
 
         showStats(non_negotiable_comp_part, negotiable_comp_part, compressed_colors, {t1, t2, t3, t4});
