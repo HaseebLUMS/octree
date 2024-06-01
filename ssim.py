@@ -1,56 +1,39 @@
-from skimage import io, color, util
+import numpy as np
+from PIL import Image
 from skimage.metrics import structural_similarity as ssim
-from skimage.filters import threshold_otsu
-from skimage.measure import label, regionprops
-
-
 import sys
 
-if len(sys.argv) < 3:
-    print("Provide two images for SSIM calculation")
-    exit(1)
+def load_image(image_path):
+    """Load an image from a file path and return it as a numpy array."""
+    image = Image.open(image_path).convert('RGBA')
+    return np.array(image)
 
-im1 = str(sys.argv[1])
-im2 = str(sys.argv[2])
+def extract_non_transparent_regions(image_array):
+    """Extract non-transparent regions of an image based on the alpha channel."""
+    alpha_channel = image_array[:, :, 3]
+    non_transparent_mask = alpha_channel > 0
+    return non_transparent_mask
 
-def trim_image(image):
-    # Convert RGBA to RGB by blending with a white background
-    if image.shape[2] == 4:
-        image = color.rgba2rgb(image)
-
-    # Convert to grayscale if necessary
-    if len(image.shape) == 3:
-        image = color.rgb2gray(image)
-        
-    # Binarize the image using Otsu's thresholding
-    thresh = threshold_otsu(image)
-    binary = image > thresh
+def calculate_ssim(image1, image2, win_size=7):
+    """Calculate SSIM between two images ignoring transparent background."""
+    mask1 = extract_non_transparent_regions(image1)
     
-    # Label connected components
-    label_image = label(binary)
-    
-    # Find the largest connected component
-    props = regionprops(label_image)
-    main_props = max(props, key=lambda x: x.area)
-    
-    # Get the bounding box of the main component
-    minr, minc, maxr, maxc = main_props.bbox
-    
-    # Crop the image to the bounding box
-    cropped_image = image[minr:maxr, minc:maxc]
-    
-    return cropped_image
+    # Extract non-transparent regions
+    image1_non_transparent = image1[mask1][:, :3]
+    image2_non_transparent = image2[mask1][:, :3]
 
-# Load the two images
-image1 = io.imread(im1)
-image2 = io.imread(im2)
+    # Calculate SSIM on non-transparent regions
+    ssim_value = ssim(image1_non_transparent, image2_non_transparent, multichannel=True, win_size=win_size)
+    return ssim_value
 
-# Trim the images to only show the main content
-image1 = trim_image(image1)
-image2 = trim_image(image2)
+# Paths to the images
+image1_path = sys.argv[1]
+image2_path = sys.argv[2]
 
-# Calculate SSIM between the trimmed images
-# Assuming the images are in the range [0, 1]
-ssim_index, diff = ssim(image1, image2, data_range=image1.max() - image1.min(), full=True)
+# Load the images
+image1 = load_image(image1_path)
+image2 = load_image(image2_path)
 
-print(f"SSIM: {ssim_index}")
+# Calculate SSIM
+ssim_value = calculate_ssim(image1, image2, win_size=3)
+print(f"SSIM: {ssim_value}")
