@@ -16,6 +16,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/filters/random_sample.h>
 
 const float DROP_PROBABILITY = 0.1;
 

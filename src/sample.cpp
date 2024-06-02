@@ -7,7 +7,6 @@
 
 #include <pcl/filters/random_sample.h>
 
-
 const char* dataset = "ricardo.ply";
 
 int main() {
