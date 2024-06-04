@@ -6,12 +6,10 @@
 #define MAX_PKT_SIZE 1310 // Used for sending unreliable datagrams
 
 
-const int RELIABLE_DATA_SIZE = 100 * 1024 * 1024;
+const int RELIABLE_DATA_SIZE   = 100 * 1024 * 1024;
 const int UNRELIABLE_DATA_SIZE = 100 * 1024 * 1024;
-
-const int FRAME_SIZE = 4 * 1024 * 1024;  // Bytes
-
-const char* LOGS_LOCATION = "./../quic_benchmarks/data";  // assuming ./ is the build directory
+const int FRAME_SIZE           = 4 * 1024 * 1024;  // Bytes
+const char* LOGS_LOCATION      = "./../quic_benchmarks/data";  // assuming ./ is the build directory
 
 void redirectClogToDevNull() {
     static std::ofstream devNull("/dev/null");

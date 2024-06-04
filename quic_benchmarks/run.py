@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-prefixes = ["75", "76", "77", "78", "79"]
+prefixes = ["79"]
 
 # loss_rate = {
 #     "11": 0.5,
@@ -22,6 +22,35 @@ def read_csv(file_path):
             data[row[0]] = float(row[1])
     return data
 
+def compare_bytes(bytes_files):
+    for file1 in bytes_files:
+        scheme1 = read_csv(file1)
+
+        frames = sorted([int(x) for x in scheme1.keys()])
+
+        n = len(frames)//2
+        tcp_frames = frames[0:n]
+        print(len(tcp_frames))
+        print(tcp_frames)
+        dg_frames = frames[n:]
+        print(dg_frames)
+
+        val1 = [scheme1.get(str(frame), 0) for frame in tcp_frames]  # val is # of bytes
+        val2 = [scheme1.get(str(frame), 0) for frame in dg_frames]
+
+        diff = [int((x[1] * 100) / x[0]) for x in zip(val1, val2)]
+        print("Percentage of a frame received by dg frame")
+        print(diff)
+        colors = ['red' if val < 0 else 'blue' for val in diff]
+
+        plt.figure()  # Bar Plots
+        plt.bar(range(len(diff)), diff, color=colors)
+
+        plt.ylim([min(70, min(diff)), 100])  # Just for easy visualization
+        plt.title(f"How many bytes are lost per frame")
+        plt.xlabel("Frame Number")
+        plt.ylabel("Percentage of a frame received \nwhen using datagrams")
+        plt.savefig(f"{file1.split('/')[1]}_lostbytes.pdf")
 
 def compare_schemes(files):
     for file1 in files:
@@ -73,7 +102,12 @@ def compare_schemes(files):
 # compare_schemes(file1_path)
 
 files = []
+bytes_files = []
+
 for prefix in prefixes:
-    p = f"data/{prefix}e2etime.csv"
-    files.append(p)
-compare_schemes(files)
+    files.append(f"data/{prefix}e2etime.csv")
+    bytes_files.append( f"data/{prefix}bytes.csv")
+
+# compare_schemes(files)
+
+compare_bytes(bytes_files)

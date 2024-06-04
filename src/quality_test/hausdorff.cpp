@@ -14,8 +14,8 @@ using namespace pcl::io;
 using namespace pcl::console;
 using namespace pcl::search;
 
-using PointType = PointXYZ;
-using Cloud = PointCloud<PointXYZ>;
+using PointType = PointXYZRGB;
+using Cloud = PointCloud<PointXYZRGB>;
 
 void
 printHelp (int, char **argv)
