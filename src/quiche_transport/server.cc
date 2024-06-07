@@ -64,6 +64,7 @@ std::unordered_map<uint8_t, int> frame_server_start_time;
 
 int total_flushed = 0;
 int processed = 0;
+bool use_qlog = true;
 
 void make_chunks_and_send_as_dgrams(quiche_conn *conn, const uint8_t *buf, size_t buf_len) {
     int total_sent = 0;
@@ -290,7 +291,10 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
     conn_io->sock = conns->sock;
     conn_io->conn = conn;
 
-    // quiche_conn_set_qlog_path(conn, "./qlog_server.qlog", "QLOG Server", "");
+    // enable qlogs if needed
+    if(use_qlog){
+        quiche_conn_set_qlog_path(conn, "./qlog_server.qlog", "QLOG Server", "");
+    }
 
     memcpy(&conn_io->peer_addr, peer_addr, peer_addr_len);
     conn_io->peer_addr_len = peer_addr_len;
@@ -516,11 +520,16 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
             }
 
             quiche_stream_iter_free(readable);
+
+            quiche_path_stats path_stats;
+            quiche_conn_path_stats(conn_io->conn, 0, &path_stats);
+            std::cout << "cwnd: " << static_cast<int>(path_stats.cwnd) << std::endl;
         }
     }
 
     HASH_ITER(hh, conns->h, conn_io, tmp) {
         flush_egress(loop, conn_io);
+
 
         if (quiche_conn_is_closed(conn_io->conn)) {
             quiche_stats stats;
@@ -628,7 +637,7 @@ int main(int argc, char *argv[]) {
         (uint8_t *) "\x0ahq-interop\x05hq-29\x05hq-28\x05hq-27\x08http/0.9", 38);
 
     quiche_config_set_initial_congestion_window_packets(config, 10);
-    quiche_config_set_max_idle_timeout(config, 10000);
+    //quiche_config_set_max_idle_timeout(config, 10000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_initial_max_data(config, 500000000);
@@ -641,8 +650,8 @@ int main(int argc, char *argv[]) {
     quiche_config_enable_dgram(config, true, 500000, 500000);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR2);
-    quiche_config_enable_hystart(config, true);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_enable_hystart(config, false);
 
     ////////////// TEST DATA  //////////////
     uint8_t frame_start = 0;

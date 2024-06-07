@@ -60,6 +60,7 @@ int total_recv = 0;
 int start_time = 0;
 int end_time = 0;
 int end_time_tcp = 0;
+bool use_qlog = false;
 
 // {frame1: x} means x bytes for frame1 have been received
 std::unordered_map<uint8_t, int> bytes_received_per_frame;
@@ -335,7 +336,7 @@ int main(int argc, char *argv[]) {
 
 
     quiche_config_set_initial_congestion_window_packets(config, 10);
-    quiche_config_set_max_idle_timeout(config, 10000);
+    //quiche_config_set_max_idle_timeout(config, 10000);
     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
     quiche_config_set_initial_max_data(config, 500000000);
@@ -349,8 +350,8 @@ int main(int argc, char *argv[]) {
     quiche_config_verify_peer(config, false);
     quiche_config_enable_pacing(config, true);
 
-    quiche_config_set_cc_algorithm(config, QUICHE_CC_BBR2);
-    quiche_config_enable_hystart(config, true);
+    quiche_config_set_cc_algorithm(config, QUICHE_CC_CUBIC);
+    quiche_config_enable_hystart(config, false);
 
     if (getenv("SSLKEYLOGFILE")) {
       quiche_config_log_keys(config);
@@ -397,7 +398,11 @@ int main(int argc, char *argv[]) {
 
     conn_io->sock = sock;
     conn_io->conn = conn;
-    // quiche_conn_set_qlog_path(conn, "./qlog_client.qlog", "QLOG Client", "");
+    
+    // enable qlogs if requested
+    if(use_qlog){
+        quiche_conn_set_qlog_path(conn, "./qlog_client.qlog", "QLOG Client", "");    
+    }
 
     ev_io watcher;
 
