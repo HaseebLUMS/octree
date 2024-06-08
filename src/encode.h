@@ -31,7 +31,7 @@ void compressImage(std::vector<uint8_t>& orig_colors, std::vector<uint8_t>& comp
         image_width = 2048;
         image_height = 2048;
     }
-    std::cout << "H: " << image_height << " W: " << image_width << std::endl;
+    // std::cout << "H: " << image_height << " W: " << image_width << std::endl;
 
     color_enc_dec->encode(orig_colors, compressed_colors, image_width, image_height);
 }

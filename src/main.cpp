@@ -111,7 +111,12 @@ int main() {
             showStats(non_negotiable_comp_part, negotiable_comp_part, compressed_colors, {t1, t2, t3, t4});
             test();
         }
-        
+
+        get_cpu_times(end_utime, end_stime);
+
+        double cpu_load = calculate_cpu_load(start_utime, start_stime, end_utime, end_stime, clock_ticks);
+        std::cout << percentage << " ] CPU Load: " << cpu_load * 100 << "%" << std::endl;
+        std::cout << percentage << " ] Storage: " <<  (1.0L * data_size / (1024*1024)) << "MB" << std::endl;
     }
 
     get_cpu_times(end_utime, end_stime);
