@@ -4,12 +4,13 @@ import matplotlib.pyplot as plt
 cpus_filename = "data/baseline_cpu.csv"
 storage_filename = "data/baseline_storage.csv"
 
-font_size = 15
+font_size = 14
 
 markers = ['o', '^', 'D', 's', 'v', '<', '>', 'p', '*', 'h']
 
 def plot_difference(filename, label, ind):
     df = pd.read_csv(filename, header=None, names=['version', 'category', 'usage'])
+    df['usage'] = df['usage'].astype(float)
 
     df = df[df['category'] == "soldier"]
 
@@ -30,7 +31,8 @@ def plot_difference(filename, label, ind):
         plt.plot(subset['version'], subset['usage_diff'], marker=markers[ind], label=label)
 
 
-plt.figure(figsize=(10, 6))
+# plt.figure(figsize=(10, 6))
+plt.figure()
 
 plot_difference(cpus_filename, "CPU Savings", 0)
 plot_difference(storage_filename, "Storage Savings", 1)
@@ -39,7 +41,7 @@ plot_difference(cpus_filename, "CPU Savings Accounting\nfor QUIC overhead", 2)
 current_yticks = plt.gca().get_yticks()
 
 # Create new y-tick labels with 'x' suffix
-ytick_labels = [f'{float(y)}x' for y in current_yticks]
+ytick_labels = [f'{float(y-1)}x' for y in current_yticks]  # -1 because we are showing as savings
 plt.gca().set_yticklabels(ytick_labels)
 
 plt.rcParams.update({'font.size': font_size})  # Update font size for all elements
@@ -49,6 +51,7 @@ plt.yticks(fontsize=font_size)
 
 plt.xlabel('Supported Point Cloud Versions', fontsize=font_size)
 plt.ylabel('Resource Savings Over The Baseline', fontsize=font_size)
-plt.title('CPU and Storage Savings Of Octavius', fontsize=font_size)
+# plt.title('CPU and Storage Savings Of Octavius', fontsize=font_size)
 plt.legend(fontsize=font_size)
+plt.tight_layout()
 plt.savefig(f"figs/resource_savings.pdf")
