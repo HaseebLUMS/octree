@@ -29,8 +29,8 @@ int main() {
     clock_t start_utime, start_stime;
     clock_t end_utime, end_stime;
 
-    std::vector<int> percentages = {100, 90, 80, 70, 60, 50};  // for sampling clouds, elem shows result size
-    // std::vector<int> percentages = {100};
+    // std::vector<int> percentages = {100, 90, 80, 70, 60, 50};  // for sampling clouds, elem shows result size
+    std::vector<int> percentages = {100};
     std::vector<double> voxel_sizes = {1};
 
     pcl::PointCloud<PointType>::Ptr parent_cloud (new pcl::PointCloud<PointType>);
@@ -38,10 +38,14 @@ int main() {
     Reader.read(std::string("./../assets/") + dataset, *parent_cloud);
 
     uint64_t data_size = 0;
+    uint64_t color_size = 0;
 
     get_cpu_times(start_utime, start_stime);
 
     for (const int& percentage : percentages) {
+
+        data_size = 0;  // just for seeing size for each bitrate version
+        color_size = 0;
         std::size_t sample_size = static_cast<std::size_t>(parent_cloud->width * parent_cloud->height * (percentage / 100.0));
 
         pcl::PointCloud<PointType>::Ptr cloud(new pcl::PointCloud<PointType>);
@@ -69,7 +73,8 @@ int main() {
 
             data_size += sizeof(negotiable_comp_part) + sizeof(uint8_t)*negotiable_comp_part.negotiable_bytes.size();
             
-            data_size += sizeof(uint8_t)*compressed_colors.size();
+            color_size += sizeof(uint8_t)*compressed_colors.size();
+            data_size += color_size;
 
             continue;  // don't want to decompression right now
 
@@ -117,6 +122,7 @@ int main() {
         double cpu_load = calculate_cpu_load(start_utime, start_stime, end_utime, end_stime, clock_ticks);
         std::cout << percentage << " ] CPU Load: " << cpu_load * 100 << "%" << std::endl;
         std::cout << percentage << " ] Storage: " <<  (1.0L * data_size / (1024*1024)) << "MB" << std::endl;
+        std::cout << percentage << " ] Colors: " <<  (100.0L * color_size / data_size) << "%" << std::endl;
     }
 
     get_cpu_times(end_utime, end_stime);

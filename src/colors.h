@@ -19,7 +19,7 @@ public:
     ~ColorEncDec(){}
 protected:
     int nbands_{3};
-    int qual_{100};
+    int qual_{70};
     std::string test_filename_jpg{"./../output/test_image.jpg"};
     std::string test_filename_webp{"./../output/test_image.webp"};
     std::string test_filename_avif{"./../output/test_image.avif"};
