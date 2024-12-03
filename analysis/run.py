@@ -5,9 +5,18 @@ import numpy as np
 cpus_filename = "data/baseline_cpu.csv"
 storage_filename = "data/baseline_storage.csv"
 
-font_size = 14
+font_size = 20
 categories = ['soldier', 'reddress', 'ricardo']
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+
+# Set global font size
+plt.rc('font', size=font_size)  # For default text
+plt.rc('axes', titlesize=font_size)  # For axes titles
+plt.rc('axes', labelsize=font_size)  # For x and y labels
+plt.rc('xtick', labelsize=font_size)  # For x-tick labels
+plt.rc('ytick', labelsize=font_size)  # For y-tick labels
+plt.rc('legend', fontsize=font_size)  # For legend
+plt.rc('figure', titlesize=font_size)  # For figure title
 
 def plot_difference(filename, baseline_adjustment=0):
     df = pd.read_csv(filename, header=None, names=['version', 'category', 'usage'])
@@ -71,20 +80,21 @@ for i, raw_df in enumerate(raw_dfs):
                     extra = ""
                     if v > 1:
                         extra = "+"
-                    plt.text(midpoint_x, line_height, f'{extra}v{v}', color='black', ha='center', va='bottom', fontsize=10)
+                    plt.text(midpoint_x, line_height, f'{extra}v{v}', color='black', ha='center', va='bottom', fontsize=font_size+2)
 
 # Setting labels and ticks
-# ax.set_xlabel('Categories', fontsize=font_size)
-ax.set_ylabel('Resource Savings Over The Baseline', fontsize=font_size)
+ax.set_ylabel('Resource Savings Over The Baseline', fontsize=28)
 ax.set_xticks(x + bar_width)
-ax.set_xticklabels(categories, fontsize=font_size)
-ax.legend(fontsize=font_size)
+ax.set_xticklabels(categories)
+ax.tick_params(axis='y', labelrotation=60)
+ax.legend()
+
+ax.tick_params(axis='x', labelsize=28)
 
 # Update y-tick labels to percentage
 current_yticks = ax.get_yticks()
 ytick_labels = [f'{int(y)}%' for y in current_yticks]
 ax.set_yticklabels(ytick_labels)
-
 plt.tight_layout()
 plt.savefig("figs/resource_savings.pdf")
 plt.show()
